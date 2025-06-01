@@ -1,0 +1,6 @@
+2025-05-28 10:18:36,980 - AkilliEvOtomasyonu - INFO - Akilli Ev Otomasyon Sistemi baslatiliyor
+2025-05-28 10:18:36,982 - AkilliEvOtomasyonu - INFO - Model eğitimi başlatılıyor
+2025-05-28 10:18:36,982 - ModelEgitimi - INFO - ML modelleri eğitiliyor: C:\Users\ndr20\Desktop\b.tasarım\smart-home-automation\data\raw\training_data_20250527_2235.csv
+2025-05-28 10:18:42,345 - ModelEgitimi - INFO - Performans raporu oluşturuldu: C:\Users\ndr20\Desktop\b.tasarım\smart-home-automation\reports\performance_report_20250528_101842.md
+2025-05-28 10:18:42,730 - ModelEgitimi - INFO - Model yöneticisi kaydedildi: C:\Users\ndr20\Desktop\b.tasarım\smart-home-automation\models\model_manager_20250528_101842.json
+2025-05-28 10:18:42,744 - AkilliEvOtomasyonu - INFO - Uygulama başarıyla tamamlandı

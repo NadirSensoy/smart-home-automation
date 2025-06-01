@@ -1,0 +1,176 @@
+{
+    "models": {
+        "Salon_Klima": {
+            "model_path": "C:\\Users\\ndr20\\Desktop\\b.tasar\u0131m\\smart-home-automation\\models\\trained\\Salon_Klima_random_forest_20250601_001720.joblib",
+            "model_type": "random_forest",
+            "accuracy": 0.9826589595375722,
+            "last_training_time": null
+        },
+        "Salon_Lamba": {
+            "model_path": "C:\\Users\\ndr20\\Desktop\\b.tasar\u0131m\\smart-home-automation\\models\\trained\\Salon_Lamba_random_forest_20250601_001720.joblib",
+            "model_type": "random_forest",
+            "accuracy": 0.9595375722543352,
+            "last_training_time": null
+        },
+        "Salon_Perde": {
+            "model_path": "C:\\Users\\ndr20\\Desktop\\b.tasar\u0131m\\smart-home-automation\\models\\trained\\Salon_Perde_random_forest_20250601_001720.joblib",
+            "model_type": "random_forest",
+            "accuracy": 0.953757225433526,
+            "last_training_time": null
+        },
+        "Yatak Odas\u0131_Klima": {
+            "model_path": "C:\\Users\\ndr20\\Desktop\\b.tasar\u0131m\\smart-home-automation\\models\\trained\\Yatak Odas\u0131_Klima_random_forest_20250601_001720.joblib",
+            "model_type": "random_forest",
+            "accuracy": 1.0,
+            "last_training_time": null
+        },
+        "Yatak Odas\u0131_Lamba": {
+            "model_path": "C:\\Users\\ndr20\\Desktop\\b.tasar\u0131m\\smart-home-automation\\models\\trained\\Yatak Odas\u0131_Lamba_random_forest_20250601_001720.joblib",
+            "model_type": "random_forest",
+            "accuracy": 0.9942196531791907,
+            "last_training_time": null
+        },
+        "Yatak Odas\u0131_Perde": {
+            "model_path": "C:\\Users\\ndr20\\Desktop\\b.tasar\u0131m\\smart-home-automation\\models\\trained\\Yatak Odas\u0131_Perde_random_forest_20250601_001720.joblib",
+            "model_type": "random_forest",
+            "accuracy": 0.9653179190751445,
+            "last_training_time": null
+        },
+        "\u00c7ocuk Odas\u0131_Klima": {
+            "model_path": "C:\\Users\\ndr20\\Desktop\\b.tasar\u0131m\\smart-home-automation\\models\\trained\\\u00c7ocuk Odas\u0131_Klima_random_forest_20250601_001720.joblib",
+            "model_type": "random_forest",
+            "accuracy": 0.9942196531791907,
+            "last_training_time": null
+        },
+        "\u00c7ocuk Odas\u0131_Lamba": {
+            "model_path": "C:\\Users\\ndr20\\Desktop\\b.tasar\u0131m\\smart-home-automation\\models\\trained\\\u00c7ocuk Odas\u0131_Lamba_random_forest_20250601_001721.joblib",
+            "model_type": "random_forest",
+            "accuracy": 0.9595375722543352,
+            "last_training_time": null
+        },
+        "\u00c7ocuk Odas\u0131_Perde": {
+            "model_path": "C:\\Users\\ndr20\\Desktop\\b.tasar\u0131m\\smart-home-automation\\models\\trained\\\u00c7ocuk Odas\u0131_Perde_random_forest_20250601_001721.joblib",
+            "model_type": "random_forest",
+            "accuracy": 0.9942196531791907,
+            "last_training_time": null
+        },
+        "Mutfak_Lamba": {
+            "model_path": "C:\\Users\\ndr20\\Desktop\\b.tasar\u0131m\\smart-home-automation\\models\\trained\\Mutfak_Lamba_random_forest_20250601_001721.joblib",
+            "model_type": "random_forest",
+            "accuracy": 0.9826589595375722,
+            "last_training_time": null
+        },
+        "Mutfak_Havaland\u0131rma": {
+            "model_path": "C:\\Users\\ndr20\\Desktop\\b.tasar\u0131m\\smart-home-automation\\models\\trained\\Mutfak_Havaland\u0131rma_random_forest_20250601_001721.joblib",
+            "model_type": "random_forest",
+            "accuracy": 0.9826589595375722,
+            "last_training_time": null
+        },
+        "Banyo_Lamba": {
+            "model_path": "C:\\Users\\ndr20\\Desktop\\b.tasar\u0131m\\smart-home-automation\\models\\trained\\Banyo_Lamba_random_forest_20250601_001721.joblib",
+            "model_type": "random_forest",
+            "accuracy": 0.9710982658959537,
+            "last_training_time": null
+        },
+        "Banyo_Havaland\u0131rma": {
+            "model_path": "C:\\Users\\ndr20\\Desktop\\b.tasar\u0131m\\smart-home-automation\\models\\trained\\Banyo_Havaland\u0131rma_random_forest_20250601_001721.joblib",
+            "model_type": "random_forest",
+            "accuracy": 0.9942196531791907,
+            "last_training_time": null
+        }
+    },
+    "performance_summary": {
+        "Salon_Klima": {
+            "accuracy": 0.9826589595375722,
+            "precision": 0.982577579913594,
+            "recall": 0.9826589595375722,
+            "f1": 0.9825683686987928,
+            "auc": 0.9990875912408759
+        },
+        "Salon_Lamba": {
+            "accuracy": 0.9595375722543352,
+            "precision": 0.9592654778574891,
+            "recall": 0.9595375722543352,
+            "f1": 0.9593572532760917,
+            "auc": 0.9968045112781956
+        },
+        "Salon_Perde": {
+            "accuracy": 0.953757225433526,
+            "precision": 0.9557408170124932,
+            "recall": 0.953757225433526,
+            "f1": 0.9535789355153517,
+            "auc": 0.9963037634408602
+        },
+        "Yatak Odas\u0131_Klima": {
+            "accuracy": 1.0,
+            "precision": 1.0,
+            "recall": 1.0,
+            "f1": 1.0,
+            "auc": 1.0
+        },
+        "Yatak Odas\u0131_Lamba": {
+            "accuracy": 0.9942196531791907,
+            "precision": 0.9943606372479911,
+            "recall": 0.9942196531791907,
+            "f1": 0.9942444280176493,
+            "auc": 0.99953007518797
+        },
+        "Yatak Odas\u0131_Perde": {
+            "accuracy": 0.9653179190751445,
+            "precision": 0.9653109253100861,
+            "recall": 0.9653179190751445,
+            "f1": 0.9651697272750906,
+            "auc": 0.9985132322331252
+        },
+        "\u00c7ocuk Odas\u0131_Klima": {
+            "accuracy": 0.9942196531791907,
+            "precision": 0.994260941370768,
+            "recall": 0.9942196531791907,
+            "f1": 0.9941868753070994,
+            "auc": 1.0
+        },
+        "\u00c7ocuk Odas\u0131_Lamba": {
+            "accuracy": 0.9595375722543352,
+            "precision": 0.9615752484717428,
+            "recall": 0.9595375722543352,
+            "f1": 0.9581719031063143,
+            "auc": 0.9956577974870657
+        },
+        "\u00c7ocuk Odas\u0131_Perde": {
+            "accuracy": 0.9942196531791907,
+            "precision": 0.9943085815918186,
+            "recall": 0.9942196531791907,
+            "f1": 0.9942287388527561,
+            "auc": 0.9999283256880733
+        },
+        "Mutfak_Lamba": {
+            "accuracy": 0.9826589595375722,
+            "precision": 0.9830530740935365,
+            "recall": 0.9826589595375722,
+            "f1": 0.9824526023285535,
+            "auc": 0.9992952783650458
+        },
+        "Mutfak_Havaland\u0131rma": {
+            "accuracy": 0.9826589595375722,
+            "precision": 0.9827622935703973,
+            "recall": 0.9826589595375722,
+            "f1": 0.982676880623861,
+            "auc": 0.9996547914940624
+        },
+        "Banyo_Lamba": {
+            "accuracy": 0.9710982658959537,
+            "precision": 0.9714027626717504,
+            "recall": 0.9710982658959537,
+            "f1": 0.9712085729626093,
+            "auc": 0.9963327370304115
+        },
+        "Banyo_Havaland\u0131rma": {
+            "accuracy": 0.9942196531791907,
+            "precision": 0.9942576817766962,
+            "recall": 0.9942196531791907,
+            "f1": 0.994161978370172,
+            "auc": 0.9990969295605057
+        }
+    },
+    "timestamp": "2025-06-01T00:17:21.178263"
+}

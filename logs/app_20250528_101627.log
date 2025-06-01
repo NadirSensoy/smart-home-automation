@@ -1,0 +1,5 @@
+2025-05-28 10:16:27,969 - AkilliEvOtomasyonu - INFO - Akilli Ev Otomasyon Sistemi baslatiliyor
+2025-05-28 10:16:27,971 - AkilliEvOtomasyonu - INFO - Veri simülasyonu başlatılıyor
+2025-05-28 10:16:27,971 - VeriUretimi - INFO - 3 gün için veri üretiliyor...
+2025-05-28 10:16:28,126 - VeriUretimi - INFO - Veri seti C:\Users\ndr20\Desktop\b.tasarım\smart-home-automation\data\raw\generated_data_20250528_1016.csv konumuna kaydedildi.
+2025-05-28 10:16:28,127 - AkilliEvOtomasyonu - INFO - Uygulama başarıyla tamamlandı

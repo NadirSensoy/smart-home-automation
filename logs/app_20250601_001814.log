@@ -1,0 +1,21 @@
+2025-06-01 00:18:14,464 - AkilliEvOtomasyonu - INFO - Akilli Ev Otomasyon Sistemi baslatiliyor
+2025-06-01 00:18:14,465 - Simülasyon - INFO - Simülasyon başlatılıyor: demo modu
+2025-06-01 00:18:14,466 - RulesEngine - INFO - Kural motoru başlatıldı
+2025-06-01 00:18:14,477 - SmartHomeSimulator - INFO - Simülasyon başlatıldı
+2025-06-01 00:18:14,478 - SmartHomeSimulator - INFO - ML modeli bulunamadı, eğitiliyor...
+2025-06-01 00:18:14,478 - SmartHomeSimulator - INFO - Makine öğrenmesi modeli için 3 günlük veri üretiliyor
+2025-06-01 00:18:19,625 - RulesEngine - INFO - ML modeli ayarlandı: True
+2025-06-01 00:18:19,626 - SmartHomeSimulator - INFO - ML modeli eğitimi tamamlandı
+2025-06-01 00:18:19,627 - SmartHomeSimulator - INFO - Varsayılan kurallar ayarlanıyor
+2025-06-01 00:18:19,627 - RulesEngine - INFO - Kural eklendi: Yüksek Sıcaklık - Klima Aç (öncelik: 2)
+2025-06-01 00:18:19,627 - RulesEngine - INFO - Kural eklendi: Boş Oda - Lamba Kapat (öncelik: 1)
+2025-06-01 00:18:19,627 - RulesEngine - INFO - Kural eklendi: Gece Modu (öncelik: 3)
+2025-06-01 00:18:19,627 - RulesEngine - INFO - Kural eklendi: Sabah Rutini (öncelik: 2)
+2025-06-01 00:18:19,627 - SmartHomeSimulator - INFO - Simülasyon başlatılıyor: 1 adım, görüntüleme: True
+2025-06-01 00:18:19,631 - RulesEngine - INFO - ML tahmini: {'Salon_Klima': {'state': False, 'probability': 0.0, 'error': "'SmartHomeDataProcessor' object has no attribute 'transform'"}, 'Salon_Lamba': {'state': False, 'probability': 0.0, 'error': "'SmartHomeDataProcessor' object has no attribute 'transform'"}, 'Salon_Perde': {'state': False, 'probability': 0.0, 'error': "'SmartHomeDataProcessor' object has no attribute 'transform'"}, 'Yatak Odası_Klima': {'state': False, 'probability': 0.0, 'error': "'SmartHomeDataProcessor' object has no attribute 'transform'"}, 'Yatak Odası_Lamba': {'state': False, 'probability': 0.0, 'error': "'SmartHomeDataProcessor' object has no attribute 'transform'"}, 'Yatak Odası_Perde': {'state': False, 'probability': 0.0, 'error': "'SmartHomeDataProcessor' object has no attribute 'transform'"}, 'Çocuk Odası_Klima': {'state': False, 'probability': 0.0, 'error': "'SmartHomeDataProcessor' object has no attribute 'transform'"}, 'Çocuk Odası_Lamba': {'state': False, 'probability': 0.0, 'error': "'SmartHomeDataProcessor' object has no attribute 'transform'"}, 'Çocuk Odası_Perde': {'state': False, 'probability': 0.0, 'error': "'SmartHomeDataProcessor' object has no attribute 'transform'"}, 'Mutfak_Lamba': {'state': False, 'probability': 0.0, 'error': "'SmartHomeDataProcessor' object has no attribute 'transform'"}, 'Mutfak_Havalandırma': {'state': False, 'probability': 0.0, 'error': "'SmartHomeDataProcessor' object has no attribute 'transform'"}, 'Banyo_Lamba': {'state': False, 'probability': 0.0, 'error': "'SmartHomeDataProcessor' object has no attribute 'transform'"}, 'Banyo_Havalandırma': {'state': False, 'probability': 0.0, 'error': "'SmartHomeDataProcessor' object has no attribute 'transform'"}}
+2025-06-01 00:18:19,631 - RulesEngine - INFO - Kural tetiklendi: Gece Modu - Değişiklikler: {'Yatak Odası_Lamba': False}
+2025-06-01 00:18:19,631 - RulesEngine - INFO - Cihaz durumları güncellendi: {'Salon_Klima': False, 'Salon_Lamba': False, 'Salon_Perde': False, 'Yatak Odası_Klima': True, 'Yatak Odası_Lamba': False, 'Yatak Odası_Perde': False, 'Çocuk Odası_Klima': True, 'Çocuk Odası_Lamba': False, 'Çocuk Odası_Perde': False, 'Mutfak_Lamba': False, 'Mutfak_Havalandırma': True, 'Banyo_Lamba': False, 'Banyo_Havalandırma': True}
+2025-06-01 00:18:19,631 - SmartHomeSimulator - ERROR - Simülasyon adımında hata: too many values to unpack (expected 2)
+2025-06-01 00:18:19,631 - SmartHomeSimulator - INFO - Simülasyon tamamlandı: 1 adım
+2025-06-01 00:18:19,632 - SmartHomeSimulator - WARNING - Kaydedilecek simülasyon verisi yok
+2025-06-01 00:18:19,632 - AkilliEvOtomasyonu - INFO - Uygulama başarıyla tamamlandı

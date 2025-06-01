@@ -1,0 +1,29 @@
+2025-05-27 15:42:57,220 - AkilliEvOtomasyonu - INFO - Akilli Ev Otomasyon Sistemi baslatiliyor
+2025-05-27 15:42:57,222 - AkilliEvOtomasyonu - INFO - Veri simülasyonu başlatılıyor
+2025-05-27 15:42:57,222 - VeriUretimi - INFO - 3 gün için veri üretiliyor...
+2025-05-27 15:42:57,381 - VeriUretimi - INFO - Veri seti c:\Users\ndr20\Desktop\b.tasarım\smart-home-automation\data\raw\generated_data_20250527_1542.csv konumuna kaydedildi.
+2025-05-27 15:42:57,381 - AkilliEvOtomasyonu - INFO - Model eğitimi başlatılıyor
+2025-05-27 15:42:57,382 - ModelEgitimi - INFO - ML modelleri eğitiliyor: c:\Users\ndr20\Desktop\b.tasarım\smart-home-automation\data\raw\generated_data_20250527_1542.csv
+2025-05-27 15:42:57,430 - ErrorHandler - ERROR - Beklenmeyen hata: 'SmartHomeDataProcessor' object has no attribute 'extract_custom_features' in train_models
+2025-05-27 15:42:57,433 - ErrorHandler - ERROR - Traceback (most recent call last):
+  File "c:\Users\ndr20\Desktop\b.tasarım\smart-home-automation\src\utils\error_handling.py", line 65, in wrapper
+    return func(*args, **kwargs)
+  File "c:\Users\ndr20\Desktop\b.tasarım\smart-home-automation\app.py", line 115, in train_models
+    model_manager.train_models_for_all_devices(data_path, model_type='random_forest', optimize=optimize)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "c:\Users\ndr20\Desktop\b.tasarım\smart-home-automation\src\models\model_manager.py", line 40, in train_models_for_all_devices
+    X_train, X_test, y_train_dict, y_test_dict, preprocessor = process_raw_data(
+                                                               ~~~~~~~~~~~~~~~~^
+        csv_path, save_processed=True
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "c:\Users\ndr20\Desktop\b.tasarım\smart-home-automation\src\data_processing\preprocessing.py", line 440, in process_raw_data
+    return processor.process_data(csv_path, save_processed, output_dir)
+           ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "c:\Users\ndr20\Desktop\b.tasarım\smart-home-automation\src\data_processing\preprocessing.py", line 406, in process_data
+    df_features = self.extract_custom_features(df_features)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'SmartHomeDataProcessor' object has no attribute 'extract_custom_features'. Did you mean: '_extract_time_features'?
+
+2025-05-27 15:42:57,434 - AkilliEvOtomasyonu - ERROR - Uygulama hatası: Beklenmeyen hata: 'SmartHomeDataProcessor' object has no attribute 'extract_custom_features'

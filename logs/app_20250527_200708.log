@@ -1,0 +1,32 @@
+2025-05-27 20:07:08,412 - AkilliEvOtomasyonu - INFO - Akilli Ev Otomasyon Sistemi baslatiliyor
+2025-05-27 20:07:08,415 - AkilliEvOtomasyonu - INFO - Model eğitimi başlatılıyor
+2025-05-27 20:07:08,415 - ModelEgitimi - INFO - Eğitim için veri üretiliyor...
+2025-05-27 20:07:08,415 - VeriUretimi - INFO - 3 gün için veri üretiliyor...
+2025-05-27 20:07:08,692 - VeriUretimi - INFO - Veri seti C:\Users\ndr20\Desktop\b.tasarım\smart-home-automation\data\raw\generated_data_20250527_2007.csv konumuna kaydedildi.
+2025-05-27 20:07:08,692 - ModelEgitimi - INFO - ML modelleri eğitiliyor: C:\Users\ndr20\Desktop\b.tasarım\smart-home-automation\data\raw\generated_data_20250527_2007.csv
+2025-05-27 20:07:09,139 - ErrorHandler - ERROR - Beklenmeyen hata: 'SmartHomeDataProcessor' object has no attribute 'test_size' in train_models
+2025-05-27 20:07:09,144 - ErrorHandler - ERROR - Traceback (most recent call last):
+  File "C:\Users\ndr20\Desktop\b.tasarım\smart-home-automation\src\utils\error_handling.py", line 65, in wrapper
+    return func(*args, **kwargs)
+  File "C:\Users\ndr20\Desktop\b.tasarım\smart-home-automation\app.py", line 115, in train_models
+    model_manager.train_models_for_all_devices(data_path, model_type='random_forest', optimize=optimize)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\ndr20\Desktop\b.tasarım\smart-home-automation\src\models\model_manager.py", line 40, in train_models_for_all_devices
+    X_train, X_test, y_train_dict, y_test_dict, preprocessor = process_raw_data(
+                                                               ~~~~~~~~~~~~~~~~^
+        csv_path, save_processed=True
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\ndr20\Desktop\b.tasarım\smart-home-automation\src\data_processing\preprocessing.py", line 524, in process_raw_data
+    return processor.process_data(csv_path, save_processed, output_dir)
+           ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\ndr20\Desktop\b.tasarım\smart-home-automation\src\data_processing\preprocessing.py", line 396, in process_data
+    X_train, X_test, y_train_dict, y_test_dict = self.split_data(X, targets)
+                                                 ~~~~~~~~~~~~~~~^^^^^^^^^^^^
+  File "C:\Users\ndr20\Desktop\b.tasarım\smart-home-automation\src\data_processing\preprocessing.py", line 261, in split_data
+    print(f"Veri {self.test_size*100}% test, {(1-self.test_size)*100}% eğitim olarak ayrılıyor...")
+                  ^^^^^^^^^^^^^^
+AttributeError: 'SmartHomeDataProcessor' object has no attribute 'test_size'
+
+2025-05-27 20:07:09,145 - AkilliEvOtomasyonu - ERROR - Uygulama hatası: Beklenmeyen hata: 'SmartHomeDataProcessor' object has no attribute 'test_size'

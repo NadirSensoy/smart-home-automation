@@ -1,0 +1,14 @@
+2025-05-28 10:15:52,785 - AkilliEvOtomasyonu - INFO - Akilli Ev Otomasyon Sistemi baslatiliyor
+2025-05-28 10:15:52,786 - AkilliEvOtomasyonu - INFO - Model eğitimi başlatılıyor
+2025-05-28 10:15:52,787 - ModelEgitimi - INFO - ML modelleri eğitiliyor: C:\Users\ndr20\Desktop\b.tasarım\smart-home-automation\data\raw\training_data_20250527_2235.csv
+2025-05-28 10:15:58,061 - ErrorHandler - ERROR - Beklenmeyen hata: Henüz hiçbir model eğitilmemiş in train_models
+2025-05-28 10:15:58,063 - ErrorHandler - ERROR - Traceback (most recent call last):
+  File "C:\Users\ndr20\Desktop\b.tasarım\smart-home-automation\src\utils\error_handling.py", line 65, in wrapper
+    return func(*args, **kwargs)
+  File "C:\Users\ndr20\Desktop\b.tasarım\smart-home-automation\app.py", line 115, in train_models
+    report_path = model_manager.generate_performance_report()
+  File "C:\Users\ndr20\Desktop\b.tasarım\smart-home-automation\src\models\model_manager.py", line 213, in generate_performance_report
+    raise ValueError("Henüz hiçbir model eğitilmemiş")
+ValueError: Henüz hiçbir model eğitilmemiş
+
+2025-05-28 10:15:58,063 - AkilliEvOtomasyonu - ERROR - Uygulama hatası: Beklenmeyen hata: Henüz hiçbir model eğitilmemiş

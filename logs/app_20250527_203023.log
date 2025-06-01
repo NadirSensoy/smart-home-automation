@@ -1,0 +1,33 @@
+2025-05-27 20:30:23,052 - AkilliEvOtomasyonu - INFO - Akilli Ev Otomasyon Sistemi baslatiliyor
+2025-05-27 20:30:23,055 - AkilliEvOtomasyonu - INFO - Model eğitimi başlatılıyor
+2025-05-27 20:30:23,056 - ModelEgitimi - INFO - Eğitim için veri üretiliyor...
+2025-05-27 20:30:23,056 - VeriUretimi - INFO - 3 gün için veri üretiliyor...
+2025-05-27 20:30:23,320 - VeriUretimi - INFO - Veri seti C:\Users\ndr20\Desktop\b.tasarım\smart-home-automation\data\raw\generated_data_20250527_2030.csv konumuna kaydedildi.
+2025-05-27 20:30:23,321 - ModelEgitimi - INFO - ML modelleri eğitiliyor: C:\Users\ndr20\Desktop\b.tasarım\smart-home-automation\data\raw\generated_data_20250527_2030.csv
+2025-05-27 20:30:23,942 - ErrorHandler - ERROR - Beklenmeyen hata: All intermediate steps should be transformers and implement fit and transform or be the string 'passthrough' 'SmartHomeDataProcessor()' (type <class 'src.data_processing.preprocessing.SmartHomeDataProcessor'>) doesn't in train_models
+2025-05-27 20:30:23,946 - ErrorHandler - ERROR - Traceback (most recent call last):
+  File "C:\Users\ndr20\Desktop\b.tasarım\smart-home-automation\src\utils\error_handling.py", line 65, in wrapper
+    return func(*args, **kwargs)
+  File "C:\Users\ndr20\Desktop\b.tasarım\smart-home-automation\app.py", line 115, in train_models
+    model_manager.train_models_for_all_devices(data_path, model_type='random_forest', optimize=optimize)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\ndr20\Desktop\b.tasarım\smart-home-automation\src\models\model_manager.py", line 55, in train_models_for_all_devices
+    model.train(X_train, y_train_dict[device_name], optimize=optimize)
+    ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\ndr20\Desktop\b.tasarım\smart-home-automation\src\models\model_trainer.py", line 204, in train
+    pipeline.fit(X_train, y_train)
+    ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
+  File "C:\Users\ndr20\AppData\Roaming\Python\Python313\site-packages\sklearn\base.py", line 1389, in wrapper
+    return fit_method(estimator, *args, **kwargs)
+  File "C:\Users\ndr20\AppData\Roaming\Python\Python313\site-packages\sklearn\pipeline.py", line 654, in fit
+    Xt = self._fit(X, y, routed_params, raw_params=params)
+  File "C:\Users\ndr20\AppData\Roaming\Python\Python313\site-packages\sklearn\pipeline.py", line 562, in _fit
+    self._validate_steps()
+    ~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\ndr20\AppData\Roaming\Python\Python313\site-packages\sklearn\pipeline.py", line 339, in _validate_steps
+    raise TypeError(
+    ...<4 lines>...
+    )
+TypeError: All intermediate steps should be transformers and implement fit and transform or be the string 'passthrough' 'SmartHomeDataProcessor()' (type <class 'src.data_processing.preprocessing.SmartHomeDataProcessor'>) doesn't
+
+2025-05-27 20:30:23,947 - AkilliEvOtomasyonu - ERROR - Uygulama hatası: Beklenmeyen hata: All intermediate steps should be transformers and implement fit and transform or be the string 'passthrough' 'SmartHomeDataProcessor()' (type <class 'src.data_processing.preprocessing.SmartHomeDataProcessor'>) doesn't

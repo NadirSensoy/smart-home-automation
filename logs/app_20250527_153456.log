@@ -1,0 +1,31 @@
+2025-05-27 15:34:56,098 - AkilliEvOtomasyonu - INFO - Akilli Ev Otomasyon Sistemi baslatiliyor
+2025-05-27 15:34:56,100 - AkilliEvOtomasyonu - INFO - Veri simülasyonu başlatılıyor
+2025-05-27 15:34:56,100 - VeriUretimi - INFO - 3 gün için veri üretiliyor...
+2025-05-27 15:34:56,254 - VeriUretimi - INFO - Veri seti c:\Users\ndr20\Desktop\b.tasarım\smart-home-automation\data\raw\generated_data_20250527_1534.csv konumuna kaydedildi.
+2025-05-27 15:34:56,254 - AkilliEvOtomasyonu - INFO - Model eğitimi başlatılıyor
+2025-05-27 15:34:56,255 - ModelEgitimi - INFO - ML modelleri eğitiliyor: c:\Users\ndr20\Desktop\b.tasarım\smart-home-automation\data\raw\generated_data_20250527_1534.csv
+2025-05-27 15:34:56,341 - ErrorHandler - ERROR - Beklenmeyen hata: Özellik veri seti boş! X boyutu: (0, 70) in train_models
+2025-05-27 15:34:56,343 - ErrorHandler - ERROR - Traceback (most recent call last):
+  File "c:\Users\ndr20\Desktop\b.tasarım\smart-home-automation\src\utils\error_handling.py", line 65, in wrapper
+    return func(*args, **kwargs)
+  File "c:\Users\ndr20\Desktop\b.tasarım\smart-home-automation\app.py", line 115, in train_models
+    model_manager.train_models_for_all_devices(data_path, model_type='random_forest', optimize=optimize)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "c:\Users\ndr20\Desktop\b.tasarım\smart-home-automation\src\models\model_manager.py", line 40, in train_models_for_all_devices
+    X_train, X_test, y_train_dict, y_test_dict, preprocessor = process_raw_data(
+                                                               ~~~~~~~~~~~~~~~~^
+        csv_path, save_processed=True
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "c:\Users\ndr20\Desktop\b.tasarım\smart-home-automation\src\data_processing\preprocessing.py", line 413, in process_raw_data
+    return processor.process_data(csv_path, save_processed, output_dir)
+           ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "c:\Users\ndr20\Desktop\b.tasarım\smart-home-automation\src\data_processing\preprocessing.py", line 388, in process_data
+    X_train, X_test, y_train_dict, y_test_dict = self.split_data(X, targets)
+                                                 ~~~~~~~~~~~~~~~^^^^^^^^^^^^
+  File "c:\Users\ndr20\Desktop\b.tasarım\smart-home-automation\src\data_processing\preprocessing.py", line 249, in split_data
+    raise ValueError(f"Özellik veri seti boş! X boyutu: {X.shape}")
+ValueError: Özellik veri seti boş! X boyutu: (0, 70)
+
+2025-05-27 15:34:56,343 - AkilliEvOtomasyonu - ERROR - Uygulama hatası: Beklenmeyen hata: Özellik veri seti boş! X boyutu: (0, 70)

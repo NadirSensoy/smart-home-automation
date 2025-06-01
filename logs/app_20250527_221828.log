@@ -1,0 +1,21 @@
+2025-05-27 22:18:28,385 - AkilliEvOtomasyonu - INFO - Akilli Ev Otomasyon Sistemi baslatiliyor
+2025-05-27 22:18:28,387 - AkilliEvOtomasyonu - INFO - Model eğitimi başlatılıyor
+2025-05-27 22:18:28,387 - ModelEgitimi - INFO - Eğitim için veri üretiliyor...
+2025-05-27 22:18:28,388 - VeriUretimi - INFO - 3 gün için veri üretiliyor...
+2025-05-27 22:18:28,649 - VeriUretimi - INFO - Veri seti C:\Users\ndr20\Desktop\b.tasarım\smart-home-automation\data\raw\generated_data_20250527_2218.csv konumuna kaydedildi.
+2025-05-27 22:18:28,649 - ModelEgitimi - INFO - ML modelleri eğitiliyor: C:\Users\ndr20\Desktop\b.tasarım\smart-home-automation\data\raw\generated_data_20250527_2218.csv
+2025-05-27 22:18:29,883 - ErrorHandler - ERROR - Beklenmeyen hata: object of type 'NoneType' has no len() in train_models
+2025-05-27 22:18:29,888 - ErrorHandler - ERROR - Traceback (most recent call last):
+  File "C:\Users\ndr20\Desktop\b.tasarım\smart-home-automation\src\utils\error_handling.py", line 65, in wrapper
+    return func(*args, **kwargs)
+  File "C:\Users\ndr20\Desktop\b.tasarım\smart-home-automation\app.py", line 115, in train_models
+    model_manager.train_models_for_all_devices(data_path, model_type='random_forest', optimize=optimize)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\ndr20\Desktop\b.tasarım\smart-home-automation\src\models\model_manager.py", line 58, in train_models_for_all_devices
+    metrics = model.evaluate(X_test, y_test_dict[device_name])
+  File "C:\Users\ndr20\Desktop\b.tasarım\smart-home-automation\src\models\model_trainer.py", line 237, in evaluate
+    y_proba = self.predict_proba(X_test)[:, 1] if len(self.classes) == 2 else None
+                                                  ~~~^^^^^^^^^^^^^^
+TypeError: object of type 'NoneType' has no len()
+
+2025-05-27 22:18:29,888 - AkilliEvOtomasyonu - ERROR - Uygulama hatası: Beklenmeyen hata: object of type 'NoneType' has no len()
