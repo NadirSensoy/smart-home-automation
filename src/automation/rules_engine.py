@@ -22,6 +22,7 @@ class RulesEngine:
         self.ml_model = None
         self.decision_history = []
         self.last_device_states = {}
+        self.ml_confidence_threshold = 0.7  # ML tahminleri için minimum güven eşiği
         self.setup_logging()
     
     def setup_logging(self):
@@ -125,116 +126,75 @@ class RulesEngine:
         self.logger.warning(f"Etkinleştirilecek kural bulunamadı: {rule_name}")
         return False
     
-    def evaluate_rules(self, current_state, devices):
+    def evaluate_rules(self, current_state, device_states, ml_predictions=None):
         """
-        Mevcut duruma göre tüm kuralları değerlendirir ve eylemleri gerçekleştirir
+        Mevcut durum için tüm kuralları değerlendirir ve cihaz durumlarını günceller
         
         Args:
-            current_state (dict): Güncel sensör ve ortam verileri
-            devices (dict): Cihaz durumları sözlüğü
+            current_state (dict): Mevcut sensör ve çevre durumu
+            device_states (dict): Mevcut cihaz durumları
+            ml_predictions (dict): ML modelinden gelen tahminler (opsiyonel)
             
         Returns:
-            dict: Güncellenen cihaz durumları
+            dict: Güncellenmiş cihaz durumları
         """
-        self.logger.debug(f"Kural değerlendirme başlatıldı - Toplam {len(self.rules)} kural")
+        # Cihaz durumlarının bir kopyasını oluştur
+        updated_states = device_states.copy()
         
-        updated_devices = devices.copy()
-        triggered_rules = []
+        # Ensure ml_confidence_threshold is defined (fallback if __init__ wasn't updated)
+        if not hasattr(self, 'ml_confidence_threshold'):
+            self.ml_confidence_threshold = 0.7
+            self.logger.warning("Added missing ml_confidence_threshold attribute")
         
-        # ML tabanlı tahminleri değerlendir
-        if self.use_ml_model and self.ml_model:
-            try:
-                # Güncel durum verilerini DataFrame'e dönüştür
-                state_df = pd.DataFrame([current_state])
-                
-                # ML modeli ile tahminleri al
-                ml_predictions = self.ml_model.predict_device_states(state_df)
-                
-                # ML tahminleri hakkında log
-                self.logger.info(f"ML tahmini: {ml_predictions}")
-                
-                # ML önerileri doğrultusunda cihazları güncelle
-                for device_name, prediction in ml_predictions.items():
-                    if prediction['probability'] >= 0.7:  # Güven eşiği
-                        updated_devices[device_name] = prediction['state']
-                        self.logger.info(f"ML önerisi: {device_name} -> {prediction['state']} ({prediction['probability']:.2f})")
-                        
-                        # Karar tarihçesine ekle
-                        self.record_decision(
-                            "ML_MODEL",
-                            f"ML tahmini: {device_name}",
-                            current_state,
-                            {device_name: devices.get(device_name, False)},
-                            {device_name: prediction['state']},
-                            prediction['probability']
-                        )
+        # Makine öğrenmesi tahminleri varsa, ML modelinden gelen önerilerini uygula
+        if self.use_ml_model and ml_predictions and self.ml_model:
+            self.logger.info(f"ML tahmini: {ml_predictions}")
             
-            except Exception as e:
-                self.logger.error(f"ML tahminleri sırasında hata: {e}")
-        
-        # Kural tabanlı mantığı çalıştır
-        for rule in self.rules:
-            if not rule['enabled']:
-                continue
-                
-            try:
-                # Koşulu değerlendir
-                if rule['condition'](current_state):
-                    # Eylemi gerçekleştir
-                    rule_name = rule['name']
-                    before_state = updated_devices.copy()
-                    
-                    # Eylemi çağır ve cihaz durumlarını güncelle
-                    action_result = rule['action'](current_state, updated_devices)
-                    
-                    # Eylem bir cihaz durumu değişikliği döndürdüyse güncelle
-                    if isinstance(action_result, dict):
-                        for device, state in action_result.items():
-                            updated_devices[device] = state
-                    
-                    # Tetiklenen kuralı kaydet
-                    triggered_rules.append(rule_name)
-                    
-                    # Değişiklikleri belirle
-                    changes = {}
-                    for device, state in updated_devices.items():
-                        if device in before_state and before_state[device] != state:
-                            changes[device] = state
-                    
-                    # Loglama
-                    if changes:
-                        self.logger.info(f"Kural tetiklendi: {rule_name} - Değişiklikler: {changes}")
+            for device_name, prediction in ml_predictions.items():
+                # Cihaz zaten device_states içinde tanımlı mı kontrol et
+                if device_name in updated_states:
+                    # ML tahmini yeterince güvenli mi?
+                    if (isinstance(prediction, dict) and 
+                        'probability' in prediction and 
+                        prediction['probability'] > self.ml_confidence_threshold):
                         
-                        # Karar tarihçesine ekle
-                        self.record_decision(
-                            rule_name, 
-                            rule['description'], 
-                            current_state, 
-                            before_state, 
-                            changes, 
-                            1.0  # Kural tabanlı mantık için güven değeri 1.0 olarak ayarlanır
-                        )
-            
-            except Exception as e:
-                self.logger.error(f"Kural değerlendirme hatası - {rule['name']}: {e}")
+                        # Yeterince güvenli tahmin - yeni durumu ayarla
+                        if 'state' in prediction:
+                            updated_states[device_name] = prediction['state']
+                            # Karar geçmişine ekle
+                            self._add_decision({
+                                'device': device_name,
+                                'action': 'Set to ' + str(prediction['state']),
+                                'reason': f"ML model prediction (confidence: {prediction['probability']:.2f})"
+                            })
         
-        if not triggered_rules:
-            self.logger.debug("Hiçbir kural tetiklenmedi")
+        # Kuralları öncelik sırasına göre değerlendir
+        sorted_rules = sorted(self.rules, key=lambda r: r['priority'], reverse=True)
         
-        # Önceki durumdan değişen cihazları belirle
-        changed_devices = {}
-        for device, state in updated_devices.items():
-            if device not in self.last_device_states or self.last_device_states[device] != state:
-                changed_devices[device] = state
+        for rule in sorted_rules:
+            # Kuralın koşulu mevcut durumu karşılıyor mu?
+            if rule['condition'](current_state):
+                # Koşul karşılanıyorsa, eylemi uygula
+                changes = rule['action'](current_state, updated_states)
+                
+                # Değişiklikler varsa uygula ve kaydet
+                if changes:
+                    self.logger.info(f"Kural tetiklendi: {rule['name']} - Değişiklikler: {changes}")
+                    
+                    for device, state in changes.items():
+                        updated_states[device] = state
+                        
+                        # Karar geçmişine ekle
+                        self._add_decision({
+                            'rule': rule['name'],
+                            'device': device,
+                            'action': 'Set to ' + str(state),
+                            'reason': rule.get('description', 'No description')
+                        })
         
-        # Son cihaz durumlarını güncelle
-        self.last_device_states = updated_devices.copy()
-        
-        # Değişiklikler hakkında log
-        if changed_devices:
-            self.logger.info(f"Cihaz durumları güncellendi: {changed_devices}")
-        
-        return updated_devices
+        # Güncellenmiş durumları döndür
+        self.logger.info(f"Cihaz durumları güncellendi: {updated_states}")
+        return updated_states
     
     def record_decision(self, rule_name, description, current_state, before_state, changes, confidence):
         """
@@ -318,6 +278,29 @@ class RulesEngine:
             })
         
         return summary
+    
+    def _add_decision(self, decision_info):
+        """
+        Karar geçmişine yeni bir karar ekler
+        
+        Args:
+            decision_info (dict): Karar bilgileri
+        """
+        # Add timestamp to decision
+        decision_info['timestamp'] = datetime.now().isoformat()
+        
+        # Add to decision history
+        self.decision_history.append(decision_info)
+        
+        # Keep decision history at reasonable size
+        if len(self.decision_history) > 1000:
+            self.decision_history = self.decision_history[-1000:]
+        
+        # Log the decision
+        if 'rule' in decision_info:
+            self.logger.info(f"Kural kararı: {decision_info['rule']} - {decision_info['device']} {decision_info['action']}")
+        else:
+            self.logger.info(f"ML kararı: {decision_info['device']} {decision_info['action']}")
 
 # Örnek kurallar ve koşullar
 def create_default_rules(rules_engine):

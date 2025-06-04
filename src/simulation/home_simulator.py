@@ -252,36 +252,55 @@ class SmartHomeSimulator:
                 if device_key in current_state:
                     device_states[device_key] = current_state[device_key]
         
-        # Kuralları değerlendir ve cihaz durumlarını güncelle
-        updated_devices = self.rules_engine.evaluate_rules(current_state, device_states)
+        # ML tahminleri var mı kontrol et
+        ml_predictions = {}
+        if self.use_ml and self.ml_model_manager:
+            try:
+                # Create a more complete feature set for prediction
+                input_data = self._prepare_prediction_input(current_state)
+                
+                # Generate all the derived features used during training
+                derived_features = self._generate_derived_features(input_data)
+                
+                # Combine original and derived features
+                combined_data = pd.concat([input_data, derived_features], axis=1)
+                
+                # Try feature bypass with the enhanced feature set
+                try:
+                    ml_predictions = self.ml_model_manager.predict_with_feature_bypass(combined_data)
+                    self.logger.info("Successfully made predictions with feature bypass")
+                except Exception as e:
+                    self.logger.error(f"Feature bypass failed: {e}")
+                    ml_predictions = self._get_default_prediction()
+                    
+                # Log predictions
+                self.logger.info(f"ML predictions: {ml_predictions}")
+            except Exception as e:
+                self.logger.error(f"Error in ML prediction process: {e}")
+                ml_predictions = self._get_default_prediction()
         
-        # Kural motorundan dönen karar bilgileri için geçici bir değer oluştur
-        decision_info = self.rules_engine.decision_history[-10:] if self.rules_engine.decision_history else []
+        # Now evaluate rules with ML predictions - wrapped in try-except to handle missing attributes
+        try:
+            updated_devices = self.rules_engine.evaluate_rules(current_state, device_states, ml_predictions)
+        except AttributeError as attr_err:
+            if 'ml_confidence_threshold' in str(attr_err):
+                # Add missing attribute dynamically if it's the issue
+                self.logger.warning("Adding missing ml_confidence_threshold to RulesEngine")
+                self.rules_engine.ml_confidence_threshold = 0.7
+                # Try again
+                updated_devices = self.rules_engine.evaluate_rules(current_state, device_states, ml_predictions)
+            else:
+                raise  # Re-raise if it's a different attribute error
         
         # Cihaz durumlarını güncelle
         for device_name, new_state in updated_devices.items():
             if device_name in current_state:
                 current_state[device_name] = new_state
         
-        # ML tahminleri var mı kontrol et
-        ml_predictions = {}
-        if self.use_ml and self.ml_model_manager:
-            try:
-                # Veri çerçevesi oluştur (sadece ilgili özellikler)
-                features_df = pd.DataFrame([current_state])
-                
-                # Makine öğrenmesi tahminlerini al
-                ml_predictions = self.ml_model_manager.predict_device_states(features_df)
-                
-                # Loga yazdır
-                self.logger.info(f"ML tahminleri: {ml_predictions}")
-            except Exception as e:
-                self.logger.error(f"ML tahmin hatası: {e}")
-        
         # Geçmiş veriye ekle
         state_record = current_state.copy()
         state_record['step'] = self.step_count
-        state_record['ml_predictions'] = str(ml_predictions)  # JSON dönüştürme gerekebilir
+        state_record['ml_predictions'] = str(ml_predictions)
         self.history.append(state_record)
         
         return current_state
@@ -320,11 +339,13 @@ class SmartHomeSimulator:
                 
                 # Güncel durumu görselleştir
                 if display:
-                    self.visualizer.update_display(
-                        current_state, 
-                        step=self.step_count, 
-                        simulation_time=self.simulation_time
-                    )
+                    # Fix: update_display doesn't accept step parameter
+                    # Add simulation_time as part of current_state instead
+                    display_data = current_state.copy() if isinstance(current_state, dict) else {}
+                    display_data['simulation_time'] = self.simulation_time
+                    display_data['step_count'] = self.step_count
+                    
+                    self.visualizer.update_display(display_data)
                 
                 # Simülasyon adımları arasında gecikme
                 adjusted_delay = delay / self.simulation_speed
@@ -363,6 +384,13 @@ class SmartHomeSimulator:
     def stop(self):
         """Simülasyonu durdurur"""
         self.running = False
+        # Clean up matplotlib resources to prevent threading errors
+        if hasattr(self, 'visualizer') and self.visualizer:
+            if hasattr(self.visualizer, 'close_matplotlib'):
+                self.visualizer.close_matplotlib()
+            elif hasattr(self.visualizer, 'close'):
+                self.visualizer.close()
+    
         self.logger.info("Simülasyon durduruldu")
     
     def save_history(self, output_dir=None):
@@ -403,6 +431,400 @@ class SmartHomeSimulator:
             self.logger.info(f"Karar geçmişi {decision_path} konumuna kaydedildi")
         
         return csv_path
+
+    def _get_model_expected_features(self):
+        """Get the feature names that the model was trained on"""
+        try:
+            # First try to get feature names directly from the first model's preprocessing
+            if hasattr(self.ml_model_manager, 'device_models') and self.ml_model_manager.device_models:
+                # Get the first device model key
+                first_model_key = list(self.ml_model_manager.device_models.keys())[0]
+                model = self.ml_model_manager.device_models[first_model_key]
+                
+                # Try to extract feature names from the model directly
+                feature_names = None
+                
+                # Try for scikit-learn pipeline
+                if hasattr(model, 'named_steps'):
+                    for step_name, step in model.named_steps.items():
+                        if hasattr(step, 'feature_names_in_'):
+                            feature_names = step.feature_names_in_
+                            self.logger.info(f"Found feature names in pipeline step {step_name}")
+                            break
+                        if hasattr(step, 'get_feature_names_out'):
+                            try:
+                                feature_names = step.get_feature_names_out()
+                                self.logger.info(f"Retrieved feature names with get_feature_names_out() from {step_name}")
+                                break
+                            except:
+                                pass
+                
+                # Try for direct model attributes
+                if feature_names is None and hasattr(model, 'feature_names_in_'):
+                    feature_names = model.feature_names_in_
+                    self.logger.info("Found feature_names_in_ directly in model")
+                
+                if feature_names is not None:
+                    self.logger.info(f"Found {len(feature_names)} feature names from model")
+                    return feature_names
+                
+            # If no feature names found in model, create them based on error messages
+            self.logger.warning("Creating features based on training data patterns")
+            
+            # Creating a comprehensive list of potential features based on the training data
+            base_features = []
+            derived_features = []
+            
+            # Base features for each room
+            for room in self.rooms:
+                base_features.extend([
+                    f"{room}_Sıcaklık", f"{room}_Nem", f"{room}_CO2", 
+                    f"{room}_Işık", f"{room}_Doluluk", f"{room}_Hareket"
+                ])
+            
+            # Resident location features
+            for i in range(1, self.num_residents + 1):
+                base_features.append(f"Kişi_{i}_Konum")
+            
+            # Device state features for each room
+            for room in self.rooms:
+                for device in ["Klima", "Lamba", "Perde", "Havalandırma"]:
+                    base_features.append(f"{room}_{device}")
+            
+            # Time features
+            base_features.extend(["hour", "day", "month", "dayofweek", "is_weekend"])
+            
+            # These are the derived features mentioned in the error messages
+            for room in self.rooms:
+                for sensor in ["Sıcaklık", "Nem", "CO2", "Işık"]:
+                    derived_features.extend([
+                        f"{room}_{sensor}_Ort1Saat",
+                        f"{room}_{sensor}_Std1Saat", 
+                        f"{room}_{sensor}_Değişim"
+                    ])
+                
+                derived_features.extend([
+                    f"{room}_SabahDoluluk",
+                    f"{room}_GündüzDoluluk",
+                    f"{room}_AkşamDoluluk", 
+                    f"{room}_GeceDoluluk"
+                ])
+            
+            derived_features.extend([
+                "Evdeki_Kişi_Sayısı", 
+                "Aktif_Oda_Sayısı", 
+                "Çalışan_Cihaz_Sayısı"
+            ])
+            
+            # Combine all features
+            expected_features = base_features + derived_features
+            self.logger.info(f"Created {len(expected_features)} expected features")
+            
+            return expected_features
+        
+        except Exception as e:
+            self.logger.error(f"Error in _get_model_expected_features: {str(e)}")
+            return None
+    
+    def _generate_derived_features(self, input_df):
+        """Generate all derived features needed for prediction"""
+        try:
+            # Create new DataFrame for derived features
+            df = input_df.copy()
+            result_df = pd.DataFrame(index=df.index)
+            
+            # Ensure we have time features
+            if 'timestamp' in df.columns:
+                time_col = pd.to_datetime(df['timestamp'])
+                result_df['hour'] = time_col.dt.hour
+                result_df['day'] = time_col.dt.day
+                result_df['month'] = time_col.dt.month
+                result_df['dayofweek'] = time_col.dt.dayofweek
+                result_df['is_weekend'] = (time_col.dt.dayofweek >= 5).astype(int)
+            else:
+                # Use current time if timestamp not available
+                now = datetime.now()
+                result_df['hour'] = now.hour
+                result_df['day'] = now.day
+                result_df['month'] = now.month
+                result_df['dayofweek'] = now.weekday()
+                result_df['is_weekend'] = int(now.weekday() >= 5)
+            
+            # Set up tracking for device and room features
+            device_cols = []
+            occupied_room_count = 0
+            
+            # Generate room-specific features
+            for room in self.rooms:
+                occupancy_col = f"{room}_Doluluk"
+                
+                # Time-based occupancy features if room occupancy is available
+                if occupancy_col in df.columns:
+                    is_occupied = df[occupancy_col].iloc[0] if not df.empty else False
+                    occupied_room_count += int(is_occupied)
+                    
+                    # Generate time-of-day occupancy flags
+                    result_df[f"{room}_SabahDoluluk"] = int(
+                        (6 <= result_df['hour'].iloc[0] < 9) and is_occupied)
+                        
+                    result_df[f"{room}_GündüzDoluluk"] = int(
+                        (9 <= result_df['hour'].iloc[0] < 17) and is_occupied)
+                        
+                    result_df[f"{room}_AkşamDoluluk"] = int(
+                        (17 <= result_df['hour'].iloc[0] < 22) and is_occupied)
+                        
+                    result_df[f"{room}_GeceDoluluk"] = int(
+                        ((result_df['hour'].iloc[0] >= 22) or 
+                         (result_df['hour'].iloc[0] < 6)) 
+                        and is_occupied)
+                else:
+                    # Default values if occupancy not available
+                    result_df[f"{room}_SabahDoluluk"] = 0
+                    result_df[f"{room}_GündüzDoluluk"] = 0
+                    result_df[f"{room}_AkşamDoluluk"] = 0
+                    result_df[f"{room}_GeceDoluluk"] = 0
+                
+                # Generate sensor statistics
+                for sensor in ["Sıcaklık", "Nem", "CO2", "Işık"]:
+                    sensor_col = f"{room}_{sensor}"
+                    if sensor_col in df.columns:
+                        sensor_val = df[sensor_col].iloc[0] if not df.empty else 0
+                        
+                        # Without historical data, use current value for mean
+                        result_df[f"{room}_{sensor}_Ort1Saat"] = sensor_val
+                        
+                        # Set std and change to 0 (no historical data)
+                        result_df[f"{room}_{sensor}_Std1Saat"] = 0
+                        result_df[f"{room}_{sensor}_Değişim"] = 0
+                    else:
+                        # Default values if sensor not available
+                        result_df[f"{room}_{sensor}_Ort1Saat"] = 0
+                        result_df[f"{room}_{sensor}_Std1Saat"] = 0
+                        result_df[f"{room}_{sensor}_Değişim"] = 0
+                
+                # Track active devices
+                for device_type in ["Klima", "Lamba", "Perde", "Havalandırma"]:
+                    device_col = f"{room}_{device_type}"
+                    if device_col in df.columns:
+                        device_cols.append(device_col)
+            
+            # Generate home-wide statistics
+            result_df["Evdeki_Kişi_Sayısı"] = self.num_residents  # Default to all residents
+            result_df["Aktif_Oda_Sayısı"] = occupied_room_count
+            
+            # Calculate active device count
+            device_count = 0
+            for col in device_cols:
+                if col in df.columns:
+                    device_count += int(df[col].iloc[0]) if not df.empty else 0
+                    
+            result_df["Çalışan_Cihaz_Sayısı"] = device_count
+            
+            return result_df
+            
+        except Exception as e:
+            self.logger.error(f"Error generating derived features: {str(e)}")
+            return pd.DataFrame(index=input_df.index)
+    
+    def _align_features(self, input_df, expected_features):
+        """
+        Create a DataFrame with exactly the features the model expects
+        
+        Args:
+            input_df: Input DataFrame with current state
+            expected_features: List of features expected by the model
+        
+        Returns:
+            DataFrame with aligned features
+        """
+        if expected_features is None:
+            self.logger.warning("No expected features provided")
+            return input_df
+            
+        try:
+            # Create an empty result DataFrame with same index
+            result_df = pd.DataFrame(index=input_df.index)
+            
+            # Generate all derived features
+            derived_df = self._generate_derived_features(input_df)
+            
+            # Copy over exact columns from input dataframe
+            common_features = set(input_df.columns) & set(expected_features)
+            for col in common_features:
+                result_df[col] = input_df[col]
+                
+            # Copy columns from derived features if available
+            derived_common = set(derived_df.columns) & set(expected_features)
+            for col in derived_common:
+                if col not in result_df.columns:  # Don't overwrite existing
+                    result_df[col] = derived_df[col]
+                
+            # Set any remaining missing columns to 0
+            missing_cols = set(expected_features) - set(result_df.columns)
+            for col in missing_cols:
+                result_df[col] = 0
+                
+            # Ensure all expected columns are present
+            missing_after = set(expected_features) - set(result_df.columns)
+            if missing_after:
+                self.logger.warning(f"Still missing {len(missing_after)} features after alignment!")
+                
+            # Log feature counts
+            self.logger.info(f"Input features: {len(input_df.columns)}, " + 
+                            f"Derived: {len(derived_df.columns)}, " + 
+                            f"Result: {len(result_df.columns)}, " + 
+                            f"Expected: {len(expected_features)}")
+                
+            # Make sure DataFrame has columns in the expected order
+            return result_df[expected_features]
+            
+        except Exception as e:
+            self.logger.error(f"Error in feature alignment: {str(e)}", exc_info=True)
+            # Return a DataFrame with zeros for all expected features
+            return pd.DataFrame(0, index=input_df.index, columns=expected_features)
+    
+    def predict_next_state(self, current_state):
+        """Make predictions using the ML model with proper feature handling"""
+        if not self.ml_model_manager:
+            self.logger.warning("ML model manager not available for predictions")
+            return self._get_default_prediction()
+        
+        try:
+            # Create a DataFrame from the current state
+            input_data = self._prepare_prediction_input(current_state)
+            
+            # First try the direct feature bypass method
+            if hasattr(self.ml_model_manager, 'predict_with_feature_bypass'):
+                try:
+                    predictions = self.ml_model_manager.predict_with_feature_bypass(input_data)
+                    self.logger.info("Successfully made predictions using feature bypass")
+                    return predictions
+                except Exception as bypass_error:
+                    self.logger.error(f"Feature bypass prediction failed: {str(bypass_error)}")
+                    # Continue to standard approach if this fails
+            
+            # Standard approach with feature alignment
+            # Get the expected feature names from the model
+            expected_features = self._get_model_expected_features()
+            
+            if expected_features is not None:
+                self.logger.info(f"Got expected features: {len(expected_features)} features")
+                
+                # Generate all derived features needed
+                derived_features = self._generate_derived_features(input_data)
+                
+                # Create a new dataframe with all needed features
+                aligned_data = pd.DataFrame(index=input_data.index)
+                
+                # First, copy over any direct matches from input data
+                for col in expected_features:
+                    if col in input_data.columns:
+                        aligned_data[col] = input_data[col]
+                    elif col in derived_features.columns:
+                        # Then get any derived features
+                        aligned_data[col] = derived_features[col]
+                    else:
+                        # Default for any remaining
+                        aligned_data[col] = 0
+                        
+                # Ensure the column order matches exactly
+                final_input = aligned_data[expected_features]
+                
+                self.logger.debug(f"Final input shape: {final_input.shape}, expected features: {len(expected_features)}")
+                
+                try:
+                    # Try the standard prediction
+                    predictions = self.ml_model_manager.predict_device_states(final_input)
+                    self.logger.info("Successfully made predictions using aligned features")
+                    return predictions
+                except Exception as e1:
+                    self.logger.error(f"Standard prediction failed: {str(e1)}")
+                    
+                    try:
+                        # Try with robust prediction
+                        return self._make_robust_prediction(final_input)
+                    except Exception as e2:
+                        self.logger.error(f"Robust prediction failed: {str(e2)}")
+                        return self._get_default_prediction()
+            else:
+                self.logger.warning("Could not determine expected features, using default prediction")
+                return self._get_default_prediction()
+                
+        except Exception as e:
+            self.logger.error(f"Error during prediction process: {str(e)}")
+            return self._get_default_prediction()
+    
+    def _prepare_prediction_input(self, current_state):
+        """Prepare the input data for prediction, ensuring all necessary features are present"""
+        try:
+            # Start with the current state as a DataFrame
+            if isinstance(current_state, dict):
+                input_data = pd.DataFrame([current_state])
+            else:
+                input_data = current_state.copy()
+            
+            # Ensure we have at least the base columns for each room
+            for room in self.rooms:
+                for sensor in ["Sıcaklık", "Nem", "CO2", "Işık", "Doluluk", "Hareket"]:
+                    col_name = f"{room}_{sensor}"
+                    if col_name not in input_data.columns:
+                        input_data[col_name] = 0
+                
+                for device in ["Klima", "Lamba", "Perde", "Havalandırma"]:
+                    col_name = f"{room}_{device}"
+                    if col_name not in input_data.columns:
+                        input_data[col_name] = False
+            
+            # Add time features if not present
+            if "hour" not in input_data:
+                current_time = datetime.now()
+                input_data["hour"] = current_time.hour
+                input_data["day"] = current_time.day
+                input_data["month"] = current_time.month
+                input_data["dayofweek"] = current_time.weekday()
+                input_data["is_weekend"] = 1 if current_time.weekday() >= 5 else 0
+            
+            return input_data
+            
+        except Exception as e:
+            self.logger.error(f"Error preparing prediction input: {str(e)}")
+            return pd.DataFrame([current_state]) if isinstance(current_state, dict) else current_state.copy()
+    
+    def _get_default_prediction(self):
+        """Return a default prediction when ML fails"""
+        default_predictions = {}
+        
+        # Set all devices to off by default
+        for room in self.rooms:
+            for device_type in ["Klima", "Lamba", "Perde", "Havalandırma"]:
+                device_key = f"{room}_{device_type}"
+                default_predictions[device_key] = {
+                    "state": False,
+                    "probability": 0.0,
+                    "source": "default"
+                }
+        
+        self.logger.warning("Using default predictions (all devices off)")
+        return default_predictions
+    
+    def _make_robust_prediction(self, final_input):
+        """Attempt predictions with additional error handling and fallbacks"""
+        if not self.ml_model_manager:
+            return self._get_default_prediction()
+        
+        try:
+            # Try to get predictions from model manager
+            predictions = self.ml_model_manager.predict_device_states(final_input)
+            
+            # Validate predictions
+            if not predictions:
+                return self._get_default_prediction()
+                
+            return predictions
+        except Exception as e:
+            self.logger.error(f"Robust prediction failed: {str(e)}")
+            return self._get_default_prediction()
+        
 
 # Simülatör sınıfını test etmek için yardımcı fonksiyon
 def run_simulation_demo(steps=50, rooms=None, display=True):

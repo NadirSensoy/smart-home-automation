@@ -1,0 +1,29 @@
+2025-06-04 22:26:49,157 - AkilliEvOtomasyonu - INFO - Akilli Ev Otomasyon Sistemi baslatiliyor
+2025-06-04 22:26:49,161 - Simülasyon - INFO - Simülasyon başlatılıyor: interactive modu
+2025-06-04 22:26:49,162 - RulesEngine - INFO - Kural motoru başlatıldı
+2025-06-04 22:26:49,165 - SmartHomeSimulator - INFO - Simülasyon başlatıldı
+2025-06-04 22:26:52,842 - SmartHomeSimulator - INFO - ML modeli bulunamadı, eğitiliyor...
+2025-06-04 22:26:52,843 - SmartHomeSimulator - INFO - Makine öğrenmesi modeli için 3 günlük veri üretiliyor
+2025-06-04 22:27:01,645 - RulesEngine - INFO - ML modeli ayarlandı: True
+2025-06-04 22:27:01,679 - SmartHomeSimulator - INFO - ML modeli eğitimi tamamlandı
+2025-06-04 22:27:01,679 - SmartHomeSimulator - INFO - Varsayılan kurallar ayarlanıyor
+2025-06-04 22:27:01,680 - RulesEngine - INFO - Kural eklendi: Yüksek Sıcaklık - Klima Aç (öncelik: 2)
+2025-06-04 22:27:01,680 - RulesEngine - INFO - Kural eklendi: Boş Oda - Lamba Kapat (öncelik: 1)
+2025-06-04 22:27:01,680 - RulesEngine - INFO - Kural eklendi: Gece Modu (öncelik: 3)
+2025-06-04 22:27:01,680 - RulesEngine - INFO - Kural eklendi: Sabah Rutini (öncelik: 2)
+2025-06-04 22:27:01,680 - SmartHomeSimulator - INFO - Simülasyon başlatılıyor: 1 adım, görüntüleme: True
+2025-06-04 22:27:01,961 - SmartHomeSimulator - INFO - Successfully made predictions with feature bypass
+2025-06-04 22:27:01,962 - SmartHomeSimulator - INFO - ML predictions: {'Salon_Klima': {'state': False, 'probability': 0.23, 'source': 'feature_padded'}, 'Salon_Lamba': {'state': False, 'probability': 0.34, 'source': 'feature_padded'}, 'Salon_Perde': {'state': False, 'probability': 0.23, 'source': 'feature_padded'}, 'Yatak Odası_Klima': {'state': False, 'probability': 0.43, 'source': 'feature_padded'}, 'Yatak Odası_Lamba': {'state': False, 'probability': 0.48, 'source': 'feature_padded'}, 'Yatak Odası_Perde': {'state': False, 'probability': 0.41, 'source': 'feature_padded'}, 'Çocuk Odası_Klima': {'state': False, 'probability': 0.23, 'source': 'feature_padded'}, 'Çocuk Odası_Lamba': {'state': False, 'probability': 0.38, 'source': 'feature_padded'}, 'Çocuk Odası_Perde': {'state': False, 'probability': 0.33, 'source': 'feature_padded'}, 'Mutfak_Lamba': {'state': False, 'probability': 0.4, 'source': 'feature_padded'}, 'Mutfak_Havalandırma': {'state': False, 'probability': 0.39, 'source': 'feature_padded'}, 'Banyo_Lamba': {'state': False, 'probability': 0.43, 'source': 'feature_padded'}, 'Banyo_Havalandırma': {'state': False, 'probability': 0.35, 'source': 'feature_padded'}}
+2025-06-04 22:27:01,962 - RulesEngine - INFO - ML tahmini: {'Salon_Klima': {'state': False, 'probability': 0.23, 'source': 'feature_padded'}, 'Salon_Lamba': {'state': False, 'probability': 0.34, 'source': 'feature_padded'}, 'Salon_Perde': {'state': False, 'probability': 0.23, 'source': 'feature_padded'}, 'Yatak Odası_Klima': {'state': False, 'probability': 0.43, 'source': 'feature_padded'}, 'Yatak Odası_Lamba': {'state': False, 'probability': 0.48, 'source': 'feature_padded'}, 'Yatak Odası_Perde': {'state': False, 'probability': 0.41, 'source': 'feature_padded'}, 'Çocuk Odası_Klima': {'state': False, 'probability': 0.23, 'source': 'feature_padded'}, 'Çocuk Odası_Lamba': {'state': False, 'probability': 0.38, 'source': 'feature_padded'}, 'Çocuk Odası_Perde': {'state': False, 'probability': 0.33, 'source': 'feature_padded'}, 'Mutfak_Lamba': {'state': False, 'probability': 0.4, 'source': 'feature_padded'}, 'Mutfak_Havalandırma': {'state': False, 'probability': 0.39, 'source': 'feature_padded'}, 'Banyo_Lamba': {'state': False, 'probability': 0.43, 'source': 'feature_padded'}, 'Banyo_Havalandırma': {'state': False, 'probability': 0.35, 'source': 'feature_padded'}}
+2025-06-04 22:27:01,963 - RulesEngine - INFO - Kural tetiklendi: Gece Modu - Değişiklikler: {'Salon_Perde': False, 'Yatak Odası_Lamba': False, 'Yatak Odası_Perde': False, 'Çocuk Odası_Lamba': False, 'Çocuk Odası_Perde': False, 'Mutfak_Lamba': False, 'Banyo_Lamba': False}
+2025-06-04 22:27:01,963 - RulesEngine - INFO - Kural kararı: Gece Modu - Salon_Perde Set to False
+2025-06-04 22:27:01,963 - RulesEngine - INFO - Kural kararı: Gece Modu - Yatak Odası_Lamba Set to False
+2025-06-04 22:27:01,963 - RulesEngine - INFO - Kural kararı: Gece Modu - Yatak Odası_Perde Set to False
+2025-06-04 22:27:01,963 - RulesEngine - INFO - Kural kararı: Gece Modu - Çocuk Odası_Lamba Set to False
+2025-06-04 22:27:01,964 - RulesEngine - INFO - Kural kararı: Gece Modu - Çocuk Odası_Perde Set to False
+2025-06-04 22:27:01,964 - RulesEngine - INFO - Kural kararı: Gece Modu - Mutfak_Lamba Set to False
+2025-06-04 22:27:01,964 - RulesEngine - INFO - Kural kararı: Gece Modu - Banyo_Lamba Set to False
+2025-06-04 22:27:01,964 - RulesEngine - INFO - Cihaz durumları güncellendi: {'Salon_Klima': True, 'Salon_Lamba': True, 'Salon_Perde': False, 'Yatak Odası_Klima': True, 'Yatak Odası_Lamba': False, 'Yatak Odası_Perde': False, 'Çocuk Odası_Klima': False, 'Çocuk Odası_Lamba': False, 'Çocuk Odası_Perde': False, 'Mutfak_Lamba': False, 'Mutfak_Havalandırma': False, 'Banyo_Lamba': False, 'Banyo_Havalandırma': True}
+2025-06-04 22:27:01,965 - SimulationVisualizer - WARNING - Starting visualization in non-main thread - using non-interactive mode
+2025-06-04 22:27:02,748 - SimulationVisualizer - INFO - Görselleştirme kaydedildi: C:\Users\ndr20\Desktop\b.tasarım\smart-home-automation\output\visualizations\simulation_vis_20250604_222702.png
+2025-06-04 22:27:03,250 - SmartHomeSimulator - INFO - Simülasyon tamamlandı: 1 adım

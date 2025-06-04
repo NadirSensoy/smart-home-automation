@@ -5,6 +5,8 @@ import logging
 import traceback  # traceback modülünü de ekleyin (hata yönetimi için)
 from datetime import datetime
 import pandas as pd
+import atexit
+import matplotlib.pyplot as plt
 
 # Proje modülleri
 from src.data_simulation.data_generator import HomeDataGenerator, generate_sample_dataset
@@ -40,6 +42,21 @@ def setup_logging():
     
     # Logger adını ASCII karakterlerle değiştir
     return logging.getLogger("AkilliEvOtomasyonu")
+
+def cleanup_matplotlib():
+    """Ensure matplotlib is properly cleaned up on exit"""
+    try:
+        # Use a more robust method to close all figures
+        if hasattr(plt, 'close'):
+            plt.close('all')
+            
+        # Ensure no more callbacks or events are active
+        if hasattr(plt, '_pylab_helpers'):
+            import gc
+            gc.collect()  # Force garbage collection
+    except Exception as e:
+        # Don't log here as logging might be shut down already
+        print(f"Warning: Error during matplotlib cleanup: {e}")
 
 @error_handler
 def generate_data(days=3, rooms=None, num_residents=3):
@@ -139,7 +156,15 @@ def run_simulation(mode="demo", steps=100, use_ml=True, rooms=None, num_resident
     if mode == "demo":
         simulator = run_simulation_demo(steps=steps, rooms=rooms, display=True)
     elif mode == "interactive":
-        run_interactive_simulation()
+        # Pass args directly without parsing command line arguments again
+        from src.simulation.interactive import InteractiveSimulation
+        sim = InteractiveSimulation(
+            rooms=rooms,
+            num_residents=num_residents,
+            time_step=5,
+            use_ml=use_ml
+        )
+        sim.start()
     else:
         logger.error(f"Bilinmeyen simülasyon modu: {mode}")
 
@@ -277,6 +302,9 @@ def main():
     logger = setup_logging()
     logger.info("Akilli Ev Otomasyon Sistemi baslatiliyor")
     
+    # Register cleanup with higher priority to run first
+    atexit.register(cleanup_matplotlib)
+    
     # Argüman ayrıştırıcısı oluştur
     parser = argparse.ArgumentParser(description='Akıllı Ev Otomasyon Sistemi')
     parser.add_argument('--mode', type=str, default='all', 
@@ -285,6 +313,9 @@ def main():
                       help='Simüle edilecek gün sayısı')
     parser.add_argument('--steps', type=int, default=100,
                       help='Simülasyon adım sayısı')
+    # Add support for --step as an alias for --steps
+    parser.add_argument('--step', type=int, dest='steps',
+                      help='Simülasyon adım sayısı (--steps ile aynı)')
     parser.add_argument('--no-optimize', action='store_true',
                       help='Hiperparametre optimizasyonu yapılmasın')
     parser.add_argument('--no-ml', action='store_true',

@@ -390,10 +390,13 @@ class SmartHomeDataProcessor(BaseEstimator, TransformerMixin):
         """
         print("Özel özellikler çıkarılıyor...")
         
-        # DataFrame'in bir kopyasını oluştur
-        df_features = df.copy()
+        # Create a copy of the DataFrame to work with
+        df_input = df.copy()
         
-        # Her bir oda için özel özellikler oluştur
+        # Instead of adding columns one by one, collect all features in a dictionary
+        new_features = {}
+        
+        # Identify all rooms
         rooms = set()
         for column in df.columns:
             if '_' in column:
@@ -401,7 +404,7 @@ class SmartHomeDataProcessor(BaseEstimator, TransformerMixin):
                 if room not in ["timestamp", "hour", "minute", "day", "is", "time"]:
                     rooms.add(room)
         
-        # Her oda için
+        # Calculate features for each room
         for room in rooms:
             # ----------- Hareket ve doluluk özellikleri -----------
             movement_col = f"{room}_Hareket"
@@ -409,13 +412,13 @@ class SmartHomeDataProcessor(BaseEstimator, TransformerMixin):
             
             if movement_col in df.columns:
                 # Son 1 saatteki hareket sayısı (12 adım = 60 dakika, her 5 dakikada bir ölçüm)
-                df_features[f"{room}_Hareket_Son1Saat"] = df[movement_col].rolling(window=12, min_periods=1).sum()
+                new_features[f"{room}_Hareket_Son1Saat"] = df[movement_col].rolling(window=12, min_periods=1).sum().values
                 
                 # Son 3 saatteki hareket oranı
-                df_features[f"{room}_Hareket_Oran3Saat"] = df[movement_col].rolling(window=36, min_periods=1).mean()
+                new_features[f"{room}_Hareket_Oran3Saat"] = df[movement_col].rolling(window=36, min_periods=1).mean().values
                 
                 # Son hareketin üzerinden geçen dakika sayısı
-                last_movement = df_features[movement_col].copy()
+                last_movement = df_input[movement_col].copy()
                 minutes_since_movement = last_movement * 0  # Başlangıç değeri
                 
                 # Her satır için son hareket üzerinden geçen dakika sayısını hesapla
@@ -426,33 +429,31 @@ class SmartHomeDataProcessor(BaseEstimator, TransformerMixin):
                     else:
                         counter += 5  # 5 dakikalık adımlar
                     minutes_since_movement.iloc[i] = counter
-                    
-                df_features[f"{room}_SonHareket_Dakika"] = minutes_since_movement
+                
+                new_features[f"{room}_SonHareket_Dakika"] = minutes_since_movement.values
             
             if occupancy_col in df.columns:
                 # Doluluk oranı (son 1 saat)
-                df_features[f"{room}_Doluluk_Oran"] = df[occupancy_col].rolling(window=12, min_periods=1).mean()
+                new_features[f"{room}_Doluluk_Oran"] = df[occupancy_col].rolling(window=12, min_periods=1).mean().values
             
             # ----------- Sensör değişim hızları -----------
             for sensor in ["Sıcaklık", "Nem", "CO2", "Işık"]:
                 col = f"{room}_{sensor}"
                 if col in df.columns:
                     # Sensör değişim hızı (önceki değere göre)
-                    df_features[f"{room}_{sensor}_Değişim"] = df[col].diff()
+                    new_features[f"{room}_{sensor}_Değişim"] = df[col].diff().values
                     
-                    # Son 1 saatteki ortalama değer
-                    df_features[f"{room}_{sensor}_Ort1Saat"] = df[col].rolling(window=12, min_periods=1).mean()
-                    
-                    # Son 1 saatteki standart sapma (değişkenlik)
-                    df_features[f"{room}_{sensor}_Std1Saat"] = df[col].rolling(window=12, min_periods=1).std()
+                    # Son 1 saatteki ortalama değer ve standart sapma
+                    new_features[f"{room}_{sensor}_Ort1Saat"] = df[col].rolling(window=12, min_periods=1).mean().values
+                    new_features[f"{room}_{sensor}_Std1Saat"] = df[col].rolling(window=12, min_periods=1).std().values
             
             # ----------- Gün içi aktivite paterni -----------
             if occupancy_col in df.columns and 'hour' in df.columns:
-                # Saat bazında doluluk
-                df_features[f"{room}_SabahDoluluk"] = ((df['hour'] >= 6) & (df['hour'] < 9) & df[occupancy_col]).astype(int)
-                df_features[f"{room}_GündüzDoluluk"] = ((df['hour'] >= 9) & (df['hour'] < 17) & df[occupancy_col]).astype(int)
-                df_features[f"{room}_AkşamDoluluk"] = ((df['hour'] >= 17) & (df['hour'] < 22) & df[occupancy_col]).astype(int)
-                df_features[f"{room}_GeceDoluluk"] = (((df['hour'] >= 22) | (df['hour'] < 6)) & df[occupancy_col]).astype(int)
+                # Combine all these calculations for better performance
+                new_features[f"{room}_SabahDoluluk"] = ((df['hour'] >= 6) & (df['hour'] < 9) & df[occupancy_col]).astype(int).values
+                new_features[f"{room}_GündüzDoluluk"] = ((df['hour'] >= 9) & (df['hour'] < 17) & df[occupancy_col]).astype(int).values
+                new_features[f"{room}_AkşamDoluluk"] = ((df['hour'] >= 17) & (df['hour'] < 22) & df[occupancy_col]).astype(int).values
+                new_features[f"{room}_GeceDoluluk"] = (((df['hour'] >= 22) | (df['hour'] < 6)) & df[occupancy_col]).astype(int).values
         
         # ----------- Tüm ev özellikleri -----------
         
@@ -460,12 +461,12 @@ class SmartHomeDataProcessor(BaseEstimator, TransformerMixin):
         person_columns = [col for col in df.columns if "Kişi_" in col and "_Konum" in col]
         if person_columns:
             # Evde bulunan (None olmayan konum) kişi sayısı
-            df_features["Evdeki_Kişi_Sayısı"] = df[person_columns].notnull().sum(axis=1)
+            new_features["Evdeki_Kişi_Sayısı"] = df[person_columns].notnull().sum(axis=1).values
         
         # Aktif oda sayısı (dolu olan)
         occupancy_columns = [col for col in df.columns if "Doluluk" in col]
         if occupancy_columns:
-            df_features["Aktif_Oda_Sayısı"] = df[occupancy_columns].sum(axis=1)
+            new_features["Aktif_Oda_Sayısı"] = df[occupancy_columns].sum(axis=1).values
         
         # Çalışan cihaz sayısı
         device_columns = []
@@ -473,16 +474,19 @@ class SmartHomeDataProcessor(BaseEstimator, TransformerMixin):
             device_columns.extend([col for col in df.columns if col.endswith(device)])
         
         if device_columns:
-            df_features["Çalışan_Cihaz_Sayısı"] = df[device_columns].sum(axis=1)
+            new_features["Çalışan_Cihaz_Sayısı"] = df[device_columns].sum(axis=1).values
         
-        # İlk ve son satırlarda NaN değerler olabilir, bunları doldur
-        df_features = df_features.bfill().ffill()
-
-        # Kalan NaN değerleri 0 ile doldur
-        df_features = df_features.fillna(0)
+        # Create a DataFrame with all the new features at once
+        features_df = pd.DataFrame(new_features, index=df.index)
         
-        print(f"Toplam {len(df_features.columns) - len(df.columns)} yeni özellik eklendi")
-        return df_features
+        # Combine original DataFrame and new features
+        result = pd.concat([df, features_df], axis=1)
+        
+        # Fill any NaN values
+        result = result.bfill().ffill().fillna(0)
+        
+        print(f"Toplam {len(features_df.columns)} yeni özellik eklendi")
+        return result
 
     def fit(self, X, y=None):
         """
@@ -504,6 +508,9 @@ class SmartHomeDataProcessor(BaseEstimator, TransformerMixin):
             self.target_device_columns = [col for col in X.columns if any(col.endswith(f"_{device}") 
                                          for device in ["Lamba", "Klima", "Perde", "TV", "Havalandırma"])]
         
+        # Store the column names during fit for consistent transform
+        self.feature_names_ = X.columns.tolist()
+        
         return self
 
     def transform(self, X):
@@ -518,29 +525,21 @@ class SmartHomeDataProcessor(BaseEstimator, TransformerMixin):
         """
         # Veri tipi kontrolü
         if isinstance(X, pd.DataFrame):
-            # Özellik isimlerini kontrol et
-            missing_features = [f for f in self.feature_names if f not in X.columns]
-            extra_features = [f for f in X.columns if f not in self.feature_names and f != 'timestamp']
+            # Create a copy to avoid modifying the original
+            X_transformed = X.copy()
             
-            if missing_features:
-                # Eksik özellikleri 0 ile doldur
-                for feature in missing_features:
-                    X[feature] = 0
-                print(f"Uyarı: Bazı özellikler eksik, 0 ile dolduruldu: {missing_features}")
+            # If feature_names_ is not set, use a safe alternative
+            if not hasattr(self, 'feature_names_'):
+                # self.logger.warning("feature_names_ not found, using current column names")
+                self.feature_names_ = X_transformed.columns.tolist()
             
-            if extra_features and len(extra_features) < 5:  # Çok fazlaysa gösterme
-                print(f"Uyarı: Bazı ekstra özellikler var: {extra_features}")
-                
-            # Sayısal tipteki sütunlar
-            numeric_cols = X.select_dtypes(include=['int64', 'float64']).columns
+            # Ensure we have all required columns, in the right order
+            missing_cols = set(self.feature_names_) - set(X_transformed.columns)
+            for col in missing_cols:
+                X_transformed[col] = 0  # Fill with appropriate default
             
-            # Eksik değerleri doldur
-            X = X.fillna(0)
-            
-            # Yalnızca sayısal verileri döndür
-            X_numeric = X[numeric_cols]
-            
-            return X_numeric
+            # Return with columns in the same order as during fit
+            return X_transformed[self.feature_names_]
         else:
             # DataFrame değilse hata ver veya dönüştür
             if hasattr(X, 'shape'):
@@ -552,6 +551,28 @@ class SmartHomeDataProcessor(BaseEstimator, TransformerMixin):
         Scikit-learn arayüzü: Uyumla ve dönüştür
         """
         return self.fit(X, y).transform(X)
+
+    def create_features(self, df):
+        """Create features in a more efficient way to avoid DataFrame fragmentation"""
+        # Instead of many insert operations, collect all new features in a dict
+        new_features = {}
+        
+        # Time-based features
+        if 'timestamp' in df.columns:
+            new_features['hour'] = df['timestamp'].dt.hour
+            new_features['day'] = df['timestamp'].dt.day
+            new_features['month'] = df['timestamp'].dt.month
+            new_features['dayofweek'] = df['timestamp'].dt.dayofweek
+            new_features['is_weekend'] = (df['timestamp'].dt.dayofweek >= 5).astype(int)
+        
+        # Other calculated features
+        # ... add other feature calculations to new_features dict ...
+        
+        # Create a DataFrame from the new features and concatenate with original
+        new_features_df = pd.DataFrame(new_features, index=df.index)
+        result = pd.concat([df, new_features_df], axis=1)
+        
+        return result
 
 # __init__.py dosyasına eklemek için temel fonksiyonlar
 def process_raw_data(csv_path, save_processed=True, output_dir=None):

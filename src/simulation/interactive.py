@@ -5,6 +5,8 @@ import os
 import logging
 import pandas as pd
 from datetime import datetime
+import sys
+from src.models.model_manager import SmartHomeModelManager
 
 from src.simulation.home_simulator import SmartHomeSimulator
 from src.utils.visualization import SimulationVisualizer
@@ -63,6 +65,7 @@ class InteractiveSimulation:
         print("                   Örnek: device Salon Lamba on")
         print("save             : Simülasyon geçmişini kaydeder")
         print("report           : Simülasyon raporu oluşturur")
+        print("visualize        : Güncel durumu görselleştirir (kapanana kadar bekler)")
         print("exit             : Programdan çıkar")
         print("help             : Bu yardım mesajını gösterir")
     
@@ -80,6 +83,12 @@ class InteractiveSimulation:
                     self.running = False
                     if self.simulator.running:
                         self.simulator.stop()
+                    else:
+                        # Even if simulator isn't running, make sure visualizer is properly closed
+                        if hasattr(self.visualizer, 'close_matplotlib'):
+                            self.visualizer.close_matplotlib()
+                        elif hasattr(self.visualizer, 'close'):
+                            self.visualizer.close()
                     print("Program sonlandırılıyor...")
                 
                 elif command == "help":
@@ -180,21 +189,151 @@ class InteractiveSimulation:
                         # Rapor oluştur
                         print("Rapor oluşturuluyor...")
                         
-                        # Görsel rapor
-                        figures_dir = self.visualizer.plot_summary(history_df)
-                        
-                        # Etkileşimli dashboard
+                        # Generate a static report instead of interactive plots
                         try:
-                            dashboard_path = self.visualizer.create_interactive_dashboard(history_df)
-                            if dashboard_path:
-                                print(f"Etkileşimli dashboard oluşturuldu: {dashboard_path}")
+                            # Create output directory if it doesn't exist
+                            output_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 
+                                                  "reports", "simulation")
+                            if not os.path.exists(output_dir):
+                                os.makedirs(output_dir)
+                                
+                            # Generate timestamp
+                            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+                            
+                            # Save data summary
+                            data_path = os.path.join(output_dir, f"simulation_data_{timestamp}.csv")
+                            history_df.to_csv(data_path, index=False)
+                            print(f"Veri özeti kaydedildi: {data_path}")
+                            
+                            # Generate plots in separate files
+                            plots_dir = os.path.join(output_dir, f"plots_{timestamp}")
+                            if not os.path.exists(plots_dir):
+                                os.makedirs(plots_dir)
+                                
+                            # Save temperature plot
+                            try:
+                                temp_fig = self.visualizer.plot_sensors_over_time(
+                                    history_df, save=False, show=False)
+                                temp_path = os.path.join(plots_dir, "temperature.png")
+                                temp_fig.savefig(temp_path, dpi=300)
+                                print(f"Sıcaklık grafiği kaydedildi: {temp_path}")
+                            except Exception as e:
+                                print(f"Sıcaklık grafiği kaydedilemedi: {e}")
+                                
+                            # Save occupancy plot
+                            try:
+                                occ_fig = self.visualizer.plot_room_occupancy(
+                                    history_df, save=False, show=False)
+                                occ_path = os.path.join(plots_dir, "occupancy.png")
+                                occ_fig.savefig(occ_path, dpi=300)
+                                print(f"Doluluk grafiği kaydedildi: {occ_path}")
+                            except Exception as e:
+                                print(f"Doluluk grafiği kaydedilemedi: {e}")
+                                
+                            # Save device usage plot
+                            try:
+                                dev_fig = self.visualizer.plot_device_usage(
+                                    history_df, save=False, show=False)
+                                dev_path = os.path.join(plots_dir, "device_usage.png") 
+                                dev_fig.savefig(dev_path, dpi=300)
+                                print(f"Cihaz kullanım grafiği kaydedildi: {dev_path}")
+                            except Exception as e:
+                                print(f"Cihaz kullanım grafiği kaydedilemedi: {e}")
+                                
+                            # Create a simple HTML report that includes all plots
+                            html_report_path = os.path.join(output_dir, f"simulation_report_{timestamp}.html")
+                            with open(html_report_path, 'w', encoding='utf-8') as html_file:
+                                html_file.write(f"""
+                                <!DOCTYPE html>
+                                <html>
+                                <head>
+                                    <title>Simulation Report {timestamp}</title>
+                                    <style>
+                                        body {{ font-family: Arial, sans-serif; margin: 20px; }}
+                                        h1, h2 {{ color: #333; }}
+                                        .plot {{ margin: 20px 0; }}
+                                        img {{ max-width: 100%; border: 1px solid #ddd; }}
+                                    </style>
+                                </head>
+                                <body>
+                                    <h1>Akıllı Ev Simülasyon Raporu</h1>
+                                    <p>Oluşturma zamanı: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}</p>
+                                    
+                                    <h2>Sıcaklık Değişimi</h2>
+                                    <div class="plot">
+                                        <img src="plots_{timestamp}/temperature.png" alt="Sıcaklık Grafiği">
+                                    </div>
+                                    
+                                    <h2>Oda Dolulukları</h2>
+                                    <div class="plot">
+                                        <img src="plots_{timestamp}/occupancy.png" alt="Doluluk Grafiği">
+                                    </div>
+                                    
+                                    <h2>Cihaz Kullanımı</h2>
+                                    <div class="plot">
+                                        <img src="plots_{timestamp}/device_usage.png" alt="Cihaz Kullanım Grafiği">
+                                    </div>
+                                </body>
+                                </html>
+                                """)
+                                
+                            print(f"HTML raporu oluşturuldu: {html_report_path}")
+                            
+                            # Try to open the HTML report
+                            import platform
+                            if platform.system() == 'Windows':
+                                os.startfile(html_report_path)
+                            else:
+                                print(f"HTML raporu görüntülemek için bu dosyayı açın: {html_report_path}")
+                                
                         except Exception as e:
-                            print(f"Dashboard oluşturulurken hata: {e}")
-                        
-                        print(f"Grafikler şu dizine kaydedildi: {figures_dir}")
+                            print(f"Rapor oluşturulamadı: {e}")
+                            import traceback
+                            traceback.print_exc()
                     else:
                         print("Rapor oluşturmak için veri yok")
                 
+                elif command == "visualize":
+                    # Create a visualization of the current state that stays open
+                    print("Güncel durum görselleştiriliyor...")
+                    
+                    # Get the current state
+                    if self.simulator.history:
+                        current_state = self.simulator.history[-1]
+                        
+                        try:
+                            # Convert state to house format
+                            house_state = self._convert_state_to_house_format(current_state)
+                            
+                            # Create a file-based visualization that works in any thread
+                            output_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 
+                                                   "output", "visualizations")
+                            if not os.path.exists(output_dir):
+                                os.makedirs(output_dir)
+                            
+                            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+                            filepath = os.path.join(output_dir, f"house_state_{timestamp}.png")
+                            
+                            # Use the function that works in any thread
+                            fig = self.visualizer.create_house_visualization(
+                                house_state, save=True, show=False)
+                            
+
+                            if fig:
+                                fig.savefig(filepath, dpi=300, bbox_inches='tight')
+                                print(f"Görselleştirme {filepath} konumuna kaydedildi.")
+                                
+                                # On Windows, try to open the file with the default image viewer
+                                import platform
+                                if platform.system() == 'Windows':
+                                    os.startfile(filepath)
+                                else:
+                                    print("Dosyayı manuel olarak açın.")
+                        except Exception as e:
+                            print(f"Görselleştirme sırasında hata: {e}")
+                    else:
+                        print("Henüz simülasyon verisi yok")
+    
                 else:
                     print(f"Bilinmeyen komut: {command}")
                     print("Yardım için 'help' yazın")
@@ -207,6 +346,38 @@ class InteractiveSimulation:
             
             except Exception as e:
                 print(f"Hata: {e}")
+    
+    def _convert_state_to_house_format(self, state):
+        """Simülasyon durumunu ev formatına dönüştürür"""
+        house_state = {"rooms": {}}
+        
+        # Initialize all rooms
+        for room in self.rooms:
+            house_state["rooms"][room] = {
+                "sensors": {},
+                "devices": {}
+            }
+        
+        # Fill with data from state
+        for key, value in state.items():
+            if key in ['timestamp', 'step', 'simulation_time', 'step_count']:
+                continue
+            
+            parts = key.split('_')
+            if len(parts) < 2:
+                continue
+            
+            room = parts[0]
+            feature = '_'.join(parts[1:])
+            
+            if room in house_state["rooms"]:
+                # Determine if it's a sensor or device
+                if feature in ['Sıcaklık', 'Nem', 'CO2', 'Işık', 'Doluluk', 'Hareket']:
+                    house_state["rooms"][room]["sensors"][feature] = value
+                elif feature in ['Klima', 'Lamba', 'Perde', 'Havalandırma']:
+                    house_state["rooms"][room]["devices"][feature] = value
+        
+        return house_state
     
     def start(self):
         """İnteraktif simülasyonu başlatır"""
@@ -221,15 +392,85 @@ class InteractiveSimulation:
         # Yardım mesajı
         self.print_help()
         
-        # Kullanıcı giriş döngüsünü başlat
-        self.start_input_loop()
+        try:
+            # Kullanıcı giriş döngüsünü başlat
+            self.start_input_loop()
+        finally:
+            # Ensure resources are cleaned up even if there's an exception
+            if hasattr(self, 'visualizer') and self.visualizer:
+                if hasattr(self.visualizer, 'close_matplotlib'):
+                    self.visualizer.close_matplotlib()
+                elif hasattr(self.visualizer, 'close'):
+                    self.visualizer.close()
 
 # Ana fonksiyon - CLI argümanlarını işleyerek interaktif simülasyonu başlatır
-def run_interactive_simulation():
+def run_interactive_simulation(rooms=None, num_residents=3, time_step=5, use_ml=True):
     """
-    Komut satırı argümanlarını işleyerek interaktif simülasyonu başlatır
+    Interactive simulation without parsing command line arguments
+    
+    Args:
+        rooms (list): Rooms to simulate
+        num_residents (int): Number of residents
+        time_step (int): Simulation time step
+        use_ml (bool): Whether to use ML model
     """
-    # Argümanları ayrıştır
+    # Set up logging
+    logging.basicConfig(
+        level=logging.INFO,
+        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+    )
+    logger = logging.getLogger("InteractiveSimulation")
+    
+    try:
+        # Use provided arguments instead of parsing command line
+        if rooms is None:
+            rooms = ["Salon", "Yatak Odası", "Çocuk Odası", "Mutfak", "Banyo"]
+        
+        # Handle rooms if they're provided as a comma-separated string
+        if isinstance(rooms, str):
+            rooms = [room.strip() for room in rooms.split(',')]
+            
+        ml_model_path = None
+        
+        if use_ml:
+            # Look for existing model
+            model_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "models")
+            if os.path.exists(model_dir):
+                model_files = [f for f in os.listdir(model_dir) if f.startswith("model_manager_") and f.endswith(".json")]
+                if model_files:
+                    # Use the most recent model
+                    model_files.sort(reverse=True)
+                    ml_model_path = os.path.join(model_dir, model_files[0])
+                    logger.info(f"Using existing model: {ml_model_path}")
+        
+        # İnteraktif simülasyon
+        sim = InteractiveSimulation(
+            rooms=rooms,
+            num_residents=num_residents,
+            time_step=time_step,
+            use_ml=use_ml
+        )
+        
+        # Initialize the simulator properly with ML model if available
+        if use_ml and ml_model_path and os.path.exists(ml_model_path):
+            try:
+                sim.simulator.ml_model_manager = SmartHomeModelManager.load_manager(ml_model_path)
+                logger.info("ML model loaded successfully")
+            except Exception as e:
+                logger.error(f"Failed to load ML model: {e}")
+        elif use_ml:
+            logger.info("No existing ML model found, will train a new one during simulation")
+                
+        # Başlat
+        sim.start()
+        
+    except Exception as e:
+        logger.error(f"Error in interactive simulation: {e}")
+        import traceback
+        traceback.print_exc()
+
+if __name__ == "__main__":
+    # Only parse command line arguments when running directly
     parser = argparse.ArgumentParser(description='Akıllı Ev Otomasyon Sistemi İnteraktif Simülasyon')
     parser.add_argument('--rooms', type=str, default="Salon,Yatak Odası,Çocuk Odası,Mutfak,Banyo",
                         help='Simüle edilecek odalar (virgülle ayrılmış)')
@@ -242,19 +483,10 @@ def run_interactive_simulation():
     
     args = parser.parse_args()
     
-    # Odaları ayır
-    rooms = [room.strip() for room in args.rooms.split(',')]
-    
-    # İnteraktif simülasyon
-    sim = InteractiveSimulation(
-        rooms=rooms,
+    # Call the function with parsed arguments
+    run_interactive_simulation(
+        rooms=args.rooms,
         num_residents=args.residents,
         time_step=args.time_step,
         use_ml=not args.no_ml
     )
-    
-    # Başlat
-    sim.start()
-
-if __name__ == "__main__":
-    run_interactive_simulation()
