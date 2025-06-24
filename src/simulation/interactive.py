@@ -50,24 +50,24 @@ class InteractiveSimulation:
         self.running = False
         
         # Loglama
-        self.logger = logging.getLogger("InteractiveSimulation")
+        self.logger = logging.getLogger(__name__)
     
     def print_help(self):
         """Kullanılabilir komutları yazdırır"""
-        print("\n=== AKILLI EV SİMÜLASYONU KOMUTLARI ===")
-        print("start [adım]     : Simülasyonu başlatır (opsiyonel: adım sayısı)")
-        print("pause            : Simülasyonu duraklatır")
-        print("resume           : Simülasyonu devam ettirir")
-        print("stop             : Simülasyonu durdurur")
-        print("speed [hız]      : Simülasyon hızını ayarlar (ör: 1.0, 2.0)")
-        print("status           : Mevcut simülasyon durumunu gösterir")
-        print("device [oda] [cihaz] [durum] : Cihaz durumunu değiştirir")
-        print("                   Örnek: device Salon Lamba on")
-        print("save             : Simülasyon geçmişini kaydeder")
-        print("report           : Simülasyon raporu oluşturur")
-        print("visualize        : Güncel durumu görselleştirir (kapanana kadar bekler)")
-        print("exit             : Programdan çıkar")
-        print("help             : Bu yardım mesajını gösterir")
+        self.logger.info("\n=== AKILLI EV SİMÜLASYONU KOMUTLARI ===")
+        self.logger.info("start [adım]     : Simülasyonu başlatır (opsiyonel: adım sayısı)")
+        self.logger.info("pause            : Simülasyonu duraklatır")
+        self.logger.info("resume           : Simülasyonu devam ettirir")
+        self.logger.info("stop             : Simülasyonu durdurur")
+        self.logger.info("speed [hız]      : Simülasyon hızını ayarlar (ör: 1.0, 2.0)")
+        self.logger.info("status           : Mevcut simülasyon durumunu gösterir")
+        self.logger.info("device [oda] [cihaz] [durum] : Cihaz durumunu değiştirir")
+        self.logger.info("                   Örnek: device Salon Lamba on")
+        self.logger.info("save             : Simülasyon geçmişini kaydeder")
+        self.logger.info("report           : Simülasyon raporu oluşturur")
+        self.logger.info("visualize        : Güncel durumu görselleştirir (kapanana kadar bekler)")
+        self.logger.info("exit             : Programdan çıkar")
+        self.logger.info("help             : Bu yardım mesajını gösterir")
     
     def start_input_loop(self):
         """Kullanıcı komutlarını okur ve işler"""
@@ -89,7 +89,7 @@ class InteractiveSimulation:
                             self.visualizer.close_matplotlib()
                         elif hasattr(self.visualizer, 'close'):
                             self.visualizer.close()
-                    print("Program sonlandırılıyor...")
+                    self.logger.info("Program sonlandırılıyor...")
                 
                 elif command == "help":
                     self.print_help()
@@ -104,29 +104,29 @@ class InteractiveSimulation:
                         self.simulator.stop()
                         time.sleep(0.5)  # İş parçacığının sonlanmasını bekle
                     
-                    print(f"Simülasyon başlatılıyor ({steps} adım)...")
+                    self.logger.info(f"Simülasyon başlatılıyor ({steps} adım)...")
                     self.simulator.run_in_thread(steps=steps, display=True, delay=0.5)
                 
                 elif command == "pause":
                     if self.simulator.running:
                         self.simulator.pause()
-                        print("Simülasyon duraklatıldı")
+                        self.logger.info("Simülasyon duraklatıldı")
                     else:
-                        print("Simülasyon çalışmıyor")
+                        self.logger.info("Simülasyon çalışmıyor")
                 
                 elif command == "resume":
                     if self.simulator.running and self.simulator.paused:
                         self.simulator.resume()
-                        print("Simülasyon devam ediyor")
+                        self.logger.info("Simülasyon devam ediyor")
                     else:
-                        print("Simülasyon duraklatılmamış veya çalışmıyor")
+                        self.logger.info("Simülasyon duraklatılmamış veya çalışmıyor")
                 
                 elif command == "stop":
                     if self.simulator.running:
                         self.simulator.stop()
-                        print("Simülasyon durduruldu")
+                        self.logger.info("Simülasyon durduruldu")
                     else:
-                        print("Simülasyon çalışmıyor")
+                        self.logger.info("Simülasyon çalışmıyor")
                 
                 elif command.startswith("speed"):
                     parts = command.split()
@@ -134,11 +134,11 @@ class InteractiveSimulation:
                         try:
                             speed = float(parts[1])
                             self.simulator.simulation_speed = speed
-                            print(f"Simülasyon hızı {speed}x olarak ayarlandı")
+                            self.logger.info(f"Simülasyon hızı {speed}x olarak ayarlandı")
                         except ValueError:
-                            print("Geçersiz hız değeri")
+                            self.logger.warning("Geçersiz hız değeri")
                     else:
-                        print(f"Mevcut simülasyon hızı: {self.simulator.simulation_speed}x")
+                        self.logger.info(f"Mevcut simülasyon hızı: {self.simulator.simulation_speed}x")
                 
                 elif command == "status":
                     if self.simulator.running:
@@ -146,13 +146,13 @@ class InteractiveSimulation:
                         if self.simulator.paused:
                             status = "Duraklatıldı"
                         
-                        print(f"Durum: {status}")
-                        print(f"Adım: {self.simulator.step_count}")
-                        print(f"Simülasyon zamanı: {self.simulator.simulation_time.strftime('%Y-%m-%d %H:%M')}")
-                        print(f"Hız: {self.simulator.simulation_speed}x")
-                        print(f"ML modeli: {'Aktif' if self.simulator.use_ml else 'Devre dışı'}")
+                        self.logger.info(f"Durum: {status}")
+                        self.logger.info(f"Adım: {self.simulator.step_count}")
+                        self.logger.info(f"Simülasyon zamanı: {self.simulator.simulation_time.strftime('%Y-%m-%d %H:%M')}")
+                        self.logger.info(f"Hız: {self.simulator.simulation_speed}x")
+                        self.logger.info(f"ML modeli: {'Aktif' if self.simulator.use_ml else 'Devre dışı'}")
                     else:
-                        print("Simülasyon çalışmıyor")
+                        self.logger.info("Simülasyon çalışmıyor")
                 
                 elif command.startswith("device"):
                     # Cihaz kontrolü: device [oda] [cihaz] [durum]
@@ -168,18 +168,18 @@ class InteractiveSimulation:
                         if room in self.rooms:
                             # Cihaz simülatöre bildir
                             self.simulator.data_generator.sensor_simulator.devices[room][device] = state
-                            print(f"{room} - {device} {'açıldı' if state else 'kapatıldı'}")
+                            self.logger.info(f"{room} - {device} {'açıldı' if state else 'kapatıldı'}")
                         else:
-                            print(f"Geçersiz oda adı: {room}")
+                            self.logger.warning(f"Geçersiz oda adı: {room}")
                     else:
-                        print("Hatalı komut. Kullanım: device [oda] [cihaz] [durum]")
+                        self.logger.warning("Hatalı komut. Kullanım: device [oda] [cihaz] [durum]")
                 
                 elif command == "save":
                     if self.simulator.history:
                         filepath = self.simulator.save_history()
-                        print(f"Simülasyon geçmişi kaydedildi: {filepath}")
+                        self.logger.info(f"Simülasyon geçmişi kaydedildi: {filepath}")
                     else:
-                        print("Kaydedilecek simülasyon verisi yok")
+                        self.logger.info("Kaydedilecek simülasyon verisi yok")
                 
                 elif command == "report":
                     if self.simulator.history:
@@ -187,7 +187,7 @@ class InteractiveSimulation:
                         history_df = pd.DataFrame(self.simulator.history)
                         
                         # Rapor oluştur
-                        print("Rapor oluşturuluyor...")
+                        self.logger.info("Rapor oluşturuluyor...")
                         
                         # Generate a static report instead of interactive plots
                         try:
@@ -203,7 +203,7 @@ class InteractiveSimulation:
                             # Save data summary
                             data_path = os.path.join(output_dir, f"simulation_data_{timestamp}.csv")
                             history_df.to_csv(data_path, index=False)
-                            print(f"Veri özeti kaydedildi: {data_path}")
+                            self.logger.info(f"Veri özeti kaydedildi: {data_path}")
                             
                             # Generate plots in separate files
                             plots_dir = os.path.join(output_dir, f"plots_{timestamp}")
@@ -216,9 +216,9 @@ class InteractiveSimulation:
                                     history_df, save=False, show=False)
                                 temp_path = os.path.join(plots_dir, "temperature.png")
                                 temp_fig.savefig(temp_path, dpi=300)
-                                print(f"Sıcaklık grafiği kaydedildi: {temp_path}")
+                                self.logger.info(f"Sıcaklık grafiği kaydedildi: {temp_path}")
                             except Exception as e:
-                                print(f"Sıcaklık grafiği kaydedilemedi: {e}")
+                                self.logger.warning(f"Sıcaklık grafiği kaydedilemedi: {e}")
                                 
                             # Save occupancy plot
                             try:
@@ -226,9 +226,9 @@ class InteractiveSimulation:
                                     history_df, save=False, show=False)
                                 occ_path = os.path.join(plots_dir, "occupancy.png")
                                 occ_fig.savefig(occ_path, dpi=300)
-                                print(f"Doluluk grafiği kaydedildi: {occ_path}")
+                                self.logger.info(f"Doluluk grafiği kaydedildi: {occ_path}")
                             except Exception as e:
-                                print(f"Doluluk grafiği kaydedilemedi: {e}")
+                                self.logger.warning(f"Doluluk grafiği kaydedilemedi: {e}")
                                 
                             # Save device usage plot
                             try:
@@ -236,9 +236,9 @@ class InteractiveSimulation:
                                     history_df, save=False, show=False)
                                 dev_path = os.path.join(plots_dir, "device_usage.png") 
                                 dev_fig.savefig(dev_path, dpi=300)
-                                print(f"Cihaz kullanım grafiği kaydedildi: {dev_path}")
+                                self.logger.info(f"Cihaz kullanım grafiği kaydedildi: {dev_path}")
                             except Exception as e:
-                                print(f"Cihaz kullanım grafiği kaydedilemedi: {e}")
+                                self.logger.warning(f"Cihaz kullanım grafiği kaydedilemedi: {e}")
                                 
                             # Create a simple HTML report that includes all plots
                             html_report_path = os.path.join(output_dir, f"simulation_report_{timestamp}.html")
@@ -277,25 +277,25 @@ class InteractiveSimulation:
                                 </html>
                                 """)
                                 
-                            print(f"HTML raporu oluşturuldu: {html_report_path}")
+                            self.logger.info(f"HTML raporu oluşturuldu: {html_report_path}")
                             
                             # Try to open the HTML report
                             import platform
                             if platform.system() == 'Windows':
                                 os.startfile(html_report_path)
                             else:
-                                print(f"HTML raporu görüntülemek için bu dosyayı açın: {html_report_path}")
+                                self.logger.info(f"HTML raporu görüntülemek için bu dosyayı açın: {html_report_path}")
                                 
                         except Exception as e:
-                            print(f"Rapor oluşturulamadı: {e}")
+                            self.logger.error(f"Rapor oluşturulamadı: {e}")
                             import traceback
                             traceback.print_exc()
                     else:
-                        print("Rapor oluşturmak için veri yok")
+                        self.logger.info("Rapor oluşturmak için veri yok")
                 
                 elif command == "visualize":
                     # Create a visualization of the current state that stays open
-                    print("Güncel durum görselleştiriliyor...")
+                    self.logger.info("Güncel durum görselleştiriliyor...")
                     
                     # Get the current state
                     if self.simulator.history:
@@ -321,31 +321,31 @@ class InteractiveSimulation:
 
                             if fig:
                                 fig.savefig(filepath, dpi=300, bbox_inches='tight')
-                                print(f"Görselleştirme {filepath} konumuna kaydedildi.")
+                                self.logger.info(f"Görselleştirme {filepath} konumuna kaydedildi.")
                                 
                                 # On Windows, try to open the file with the default image viewer
                                 import platform
                                 if platform.system() == 'Windows':
                                     os.startfile(filepath)
                                 else:
-                                    print("Dosyayı manuel olarak açın.")
+                                    self.logger.info("Dosyayı manuel olarak açın.")
                         except Exception as e:
-                            print(f"Görselleştirme sırasında hata: {e}")
+                            self.logger.error(f"Görselleştirme sırasında hata: {e}")
                     else:
-                        print("Henüz simülasyon verisi yok")
+                        self.logger.info("Henüz simülasyon verisi yok")
     
                 else:
-                    print(f"Bilinmeyen komut: {command}")
-                    print("Yardım için 'help' yazın")
+                    self.logger.warning(f"Bilinmeyen komut: {command}")
+                    self.logger.info("Yardım için 'help' yazın")
                 
             except KeyboardInterrupt:
-                print("\nProgram sonlandırılıyor...")
+                self.logger.info("\nProgram sonlandırılıyor...")
                 self.running = False
                 if self.simulator.running:
                     self.simulator.stop()
             
             except Exception as e:
-                print(f"Hata: {e}")
+                self.logger.error(f"Hata: {e}")
     
     def _convert_state_to_house_format(self, state):
         """Simülasyon durumunu ev formatına dönüştürür"""
@@ -382,12 +382,12 @@ class InteractiveSimulation:
     def start(self):
         """İnteraktif simülasyonu başlatır"""
         # Hoş geldiniz mesajı
-        print("\n" + "="*60)
-        print("   AKILLI EV OTOMASYON SİSTEMİ - İNTERAKTİF SİMÜLASYON")
-        print("="*60)
-        print(f"Odalar: {', '.join(self.rooms)}")
-        print(f"Kullanıcı sayısı: {self.num_residents}")
-        print(f"Makine öğrenmesi: {'Aktif' if self.use_ml else 'Devre dışı'}")
+        self.logger.info("\n" + "="*60)
+        self.logger.info("   AKILLI EV OTOMASYON SİSTEMİ - İNTERAKTİF SİMÜLASYON")
+        self.logger.info("="*60)
+        self.logger.info(f"Odalar: {', '.join(self.rooms)}")
+        self.logger.info(f"Kullanıcı sayısı: {self.num_residents}")
+        self.logger.info(f"Makine öğrenmesi: {'Aktif' if self.use_ml else 'Devre dışı'}")
         
         # Yardım mesajı
         self.print_help()
@@ -415,10 +415,6 @@ def run_interactive_simulation(rooms=None, num_residents=3, time_step=5, use_ml=
         use_ml (bool): Whether to use ML model
     """
     # Set up logging
-    logging.basicConfig(
-        level=logging.INFO,
-        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-    )
     logger = logging.getLogger("InteractiveSimulation")
     
     try:

@@ -3,6 +3,7 @@ import pandas as pd
 from datetime import datetime, timedelta
 import os
 import random
+from src.config import config
 
 from src.data_simulation.sensor_simulator import SensorSimulator
 from src.data_simulation.user_simulator import UserSimulator
@@ -24,7 +25,7 @@ class HomeDataGenerator:
             time_step (int): Simülasyon adımları arasındaki dakika farkı
         """
         self.start_time = start_time or datetime.now()
-        self.rooms = rooms or ["Salon", "Yatak Odası", "Çocuk Odası", "Mutfak", "Banyo"]
+        self.rooms = rooms or config["rooms"]
         self.time_step = time_step
         self.current_time = self.start_time
         
@@ -33,12 +34,7 @@ class HomeDataGenerator:
         self.user_simulator = UserSimulator(num_residents=num_residents, rooms=self.rooms)
         
         # Cihazların manuel kullanım olasılıkları (kullanıcı tarafından açma/kapama)
-        self.manual_operation_prob = {
-            "Klima": 0.2,
-            "Lamba": 0.7,
-            "Perde": 0.4,
-            "Havalandırma": 0.3
-        }
+        self.manual_operation_prob = config["manual_operation_prob"]
     
     def _update_devices_by_user_behavior(self, user_locations):
         """
@@ -71,7 +67,7 @@ class HomeDataGenerator:
                     elif device == "Klima":
                         # Sıcaklık yüksekse klimayı açma olasılığı yüksek
                         temp = self.sensor_simulator.room_status[room]["Sıcaklık"]
-                        if temp > 26:
+                        if temp > config["automation_thresholds"]["high_temp_threshold"]:
                             devices[device] = random.random() < 0.8  # %80 açık
                         elif temp < 20:
                             devices[device] = random.random() < 0.2  # %20 açık
@@ -91,7 +87,7 @@ class HomeDataGenerator:
                     elif device == "Havalandırma":
                         # CO2 seviyesi yüksekse havalandırmayı açma olasılığı yüksek
                         co2 = self.sensor_simulator.room_status[room]["CO2"]
-                        if co2 > 800:
+                        if co2 > config["automation_thresholds"]["high_co2_threshold"]:
                             devices[device] = random.random() < 0.7  # %70 açık
                         else:
                             devices[device] = random.random() < 0.3  # %30 açık
@@ -101,12 +97,12 @@ class HomeDataGenerator:
                 # Son hareket zamanından bu yana geçen süre (dakika)
                 time_since_last_movement = (self.current_time - self.sensor_simulator.room_status[room]["Son_Hareket"]).total_seconds() / 60
                 
-                if time_since_last_movement > 15:  # 15 dakikadan fazla süre geçtiyse
+                if time_since_last_movement > config["automation_thresholds"]["empty_room_device_off_delay_min"]:  # 15 dakikadan fazla süre geçtiyse
                     # Lambaları %90 olasılıkla kapat
                     if "Lamba" in devices and devices["Lamba"] and random.random() < 0.9:
                         devices["Lamba"] = False
                 
-                if time_since_last_movement > 30:  # 30 dakikadan fazla süre geçtiyse
+                if time_since_last_movement > config["automation_thresholds"]["empty_room_ac_off_delay_min"]:  # 30 dakikadan fazla süre geçtiyse
                     # Klimayı %70 olasılıkla kapat
                     if "Klima" in devices and devices["Klima"] and random.random() < 0.7:
                         devices["Klima"] = False

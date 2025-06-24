@@ -204,3 +204,30 @@ class DeviceManager:
                 changed_devices.append(device_id)
                 
         return changed_devices
+
+    def get_summary_by_room(self):
+        """
+        Cihaz durumlarını oda bazında özetler
+        Returns:
+            dict: Oda adı -> cihazlar ve durumları
+        """
+        summary = {}
+        for device_id, state in self.device_states.items():
+            if '_' in device_id:
+                room, device = device_id.split('_', 1)
+            else:
+                room, device = 'Genel', device_id
+            if room not in summary:
+                summary[room] = {}
+            summary[room][device] = state
+        return summary
+
+    def export_device_history(self, filepath):
+        """
+        Cihaz geçmişini JSON dosyasına kaydeder
+        Args:
+            filepath (str): Kaydedilecek dosya yolu
+        """
+        with open(filepath, 'w', encoding='utf-8') as f:
+            json.dump(self.device_history, f, indent=2, default=str)
+        self.logger.info(f"Cihaz geçmişi {filepath} dosyasına kaydedildi")

@@ -2,6 +2,30 @@
 
 # This dictionary holds parameters for data simulation, model training, and automation rules.
 config = {
+    "rooms": ["Salon", "Yatak Odası", "Çocuk Odası", "Mutfak", "Banyo"],
+    "devices_per_room": ["Klima", "Lamba", "Perde", "Havalandırma"],
+    "sensor_types": ["Sıcaklık", "Nem", "CO2", "Işık", "Doluluk", "Hareket"],
+    "automation_thresholds": {
+        "high_temp_threshold": 26,
+        "low_temp_threshold": 18,
+        "low_light_threshold": 100,
+        "high_co2_threshold": 800,
+        "low_co2_threshold": 600,
+        "high_humidity_threshold": 70,
+        "low_humidity_threshold": 30,
+        "empty_room_device_off_delay_min": 15,
+        "empty_room_ac_off_delay_min": 30,
+        "morning_start": 6,   # Morning period start (6 AM)
+        "morning_end": 10,    # Morning period end (10 AM)
+        "evening_start": 18,  # Evening period start (6 PM)
+        "evening_end": 23     # Evening period end (11 PM)
+    },
+    "manual_operation_prob": {
+        "Klima": 0.2,
+        "Lamba": 0.7,
+        "Perde": 0.4,
+        "Havalandırma": 0.3
+    },
     "data_simulation": {
         "num_rooms": 5,  # Number of rooms to simulate
         "num_devices_per_room": 3,  # Number of devices in each room

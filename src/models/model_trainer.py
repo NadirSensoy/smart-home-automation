@@ -9,6 +9,7 @@ from sklearn.metrics import (
     accuracy_score, precision_score, recall_score, f1_score, roc_auc_score,
     confusion_matrix, classification_report, roc_curve, auc
 )
+import logging
 
 from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier
 from sklearn.tree import DecisionTreeClassifier
@@ -21,6 +22,7 @@ from sklearn.metrics import (
     confusion_matrix, classification_report, roc_curve, auc
 )
 from sklearn.pipeline import Pipeline
+from src.data_processing.preprocessing import SmartHomeDataProcessor
 
 class DeviceControlModel:
     """
@@ -47,20 +49,23 @@ class DeviceControlModel:
         self.best_params = None
         self.metrics = {}
         self.random_state = 42  # Rastgelelik için sabit bir değer
-        
-        # Modeli oluştur
+        self.logger = logging.getLogger(__name__)
+          # Modeli oluştur
         self._create_model()
     
     def _create_model(self):
-        """Belirtilen türde model oluşturur"""
+        """Belirtilen türde model oluşturur - PERFORMANS OPTIMIZASYONU"""
         if self.model_type == 'random_forest':
-            self.model = RandomForestClassifier(random_state=self.random_state)
+            # n_estimators'ı 100'den 50'ye düşürdük
+            self.model = RandomForestClassifier(n_estimators=50, random_state=self.random_state)
         elif self.model_type == 'gradient_boosting':
-            self.model = GradientBoostingClassifier(random_state=self.random_state)
+            # n_estimators'ı 100'den 50'ye düşürdük
+            self.model = GradientBoostingClassifier(n_estimators=50, random_state=self.random_state)
         elif self.model_type == 'decision_tree':
             self.model = DecisionTreeClassifier(random_state=self.random_state)
         elif self.model_type == 'logistic_regression':
-            self.model = LogisticRegression(random_state=self.random_state, max_iter=1000)
+            # max_iter'i 1000'den 500'e düşürdük
+            self.model = LogisticRegression(random_state=self.random_state, max_iter=500)
         elif self.model_type == 'svm':
             self.model = SVC(probability=True, random_state=self.random_state)
         elif self.model_type == 'knn':
@@ -76,8 +81,7 @@ class DeviceControlModel:
             preprocessor: Sklearn preprocessing pipeline
             
         Returns:
-            sklearn.pipeline.Pipeline: Önişleme ve model içeren pipeline
-        """
+            sklearn.pipeline.Pipeline: Önişleme ve model içeren pipeline        """
         self.preprocessor = preprocessor
         return Pipeline([
             ('preprocessor', preprocessor),
@@ -87,64 +91,59 @@ class DeviceControlModel:
     def get_default_param_grid(self):
         """
         Model türüne göre varsayılan hiperparametre ızgarasını döndürür
+        PERFORMANS OPTIMIZASYONU: Daha az parametre kombinasyonu
         
         Returns:
             dict: Hiperparametre ızgarası
         """
         if self.model_type == 'random_forest':
             return {
-                'classifier__n_estimators': [50, 100, 200],
-                'classifier__max_depth': [None, 10, 20, 30],
-                'classifier__min_samples_split': [2, 5, 10],
-                'classifier__min_samples_leaf': [1, 2, 4]
+                'classifier__n_estimators': [50, 100],  # Azaltıldı: 3→2
+                'classifier__max_depth': [None, 10, 20],  # Azaltıldı: 4→3
+                'classifier__min_samples_split': [2, 5],  # Azaltıldı: 3→2
             }
         elif self.model_type == 'gradient_boosting':
             return {
-                'classifier__n_estimators': [50, 100, 200],
-                'classifier__learning_rate': [0.01, 0.1, 0.2],
-                'classifier__max_depth': [3, 5, 7],
-                'classifier__min_samples_split': [2, 5]
+                'classifier__n_estimators': [50, 100],  # Azaltıldı: 3→2
+                'classifier__learning_rate': [0.1, 0.2],  # Azaltıldı: 3→2
+                'classifier__max_depth': [3, 5],  # Azaltıldı: 3→2
             }
         elif self.model_type == 'decision_tree':
             return {
-                'classifier__max_depth': [None, 10, 20, 30],
-                'classifier__min_samples_split': [2, 5, 10],
-                'classifier__min_samples_leaf': [1, 2, 4],
-                'classifier__criterion': ['gini', 'entropy']
+                'classifier__max_depth': [10, 20],  # Azaltıldı: 4→2
+                'classifier__min_samples_split': [2, 5],  # Azaltıldı: 3→2
+                'classifier__criterion': ['gini']  # Azaltıldı: 2→1
             }
         elif self.model_type == 'logistic_regression':
-            return {
-                'classifier__C': [0.01, 0.1, 1, 10, 100],
-                'classifier__penalty': ['l1', 'l2'],
-                'classifier__solver': ['liblinear', 'saga']
+            return {                'classifier__C': [0.1, 1, 10],  # Azaltıldı: 5→3
+                'classifier__penalty': ['l2'],  # Azaltıldı: 2→1
+                'classifier__solver': ['liblinear']  # Azaltıldı: 2→1
             }
         elif self.model_type == 'svm':
             return {
-                'classifier__C': [0.1, 1, 10],
-                'classifier__kernel': ['linear', 'rbf', 'poly'],
-                'classifier__gamma': ['scale', 'auto', 0.1, 1]
+                'classifier__C': [1, 10],  # Azaltıldı: 3→2
+                'classifier__kernel': ['linear', 'rbf'],  # Azaltıldı: 3→2
             }
         elif self.model_type == 'knn':
             return {
-                'classifier__n_neighbors': [3, 5, 7, 11, 15],
-                'classifier__weights': ['uniform', 'distance'],
-                'classifier__p': [1, 2]  # Manhattan distance (p=1) or Euclidean distance (p=2)
+                'classifier__n_neighbors': [3, 5, 7],  # Azaltıldı: 5→3
+                'classifier__weights': ['uniform']  # Azaltıldı: 2→1
             }
         else:
             return {}
     
-    def optimize_hyperparameters(self, pipeline, X_train, y_train, param_grid=None, cv=5, n_jobs=-1, verbose=1):
+    def optimize_hyperparameters(self, pipeline, X_train, y_train, param_grid=None, cv=3, n_jobs=2, verbose=0):
         """
-        Hiperparametre optimizasyonu yapar
+        Hiperparametre optimizasyonu yapar - PERFORMANS OPTIMIZASYONU
         
         Args:
             pipeline: Sklearn Pipeline
             X_train: Eğitim özellikleri
             y_train: Eğitim hedef değişkeni
             param_grid (dict): Hiperparametre ızgarası
-            cv (int): Çapraz doğrulama katlama sayısı
-            n_jobs (int): Paralel iş sayısı
-            verbose (int): Ayrıntı seviyesi
+            cv (int): Çapraz doğrulama katlama sayısı (varsayılan: 3, eskiden 5)
+            n_jobs (int): Paralel iş sayısı (varsayılan: 2, eskiden -1)
+            verbose (int): Ayrıntı seviyesi (varsayılan: 0, eskiden 1)
             
         Returns:
             sklearn.model_selection.GridSearchCV: En iyi modeli içeren GridSearchCV nesnesi
@@ -152,7 +151,7 @@ class DeviceControlModel:
         if param_grid is None:
             param_grid = self.get_default_param_grid()
         
-        print(f"{self.device_name} için hiperparametre optimizasyonu yapılıyor...")
+        self.logger.info(f"{self.device_name} için hiperparametre optimizasyonu yapılıyor...")
         
         grid_search = GridSearchCV(
             pipeline, param_grid, cv=cv, scoring='accuracy',
@@ -161,13 +160,12 @@ class DeviceControlModel:
         
         grid_search.fit(X_train, y_train)
         
-        print(f"En iyi parametreler: {grid_search.best_params_}")
-        print(f"En iyi çapraz doğrulama skoru: {grid_search.best_score_:.4f}")
+        self.logger.info(f"En iyi parametreler: {grid_search.best_params_}")
+        self.logger.info(f"En iyi çapraz doğrulama skoru: {grid_search.best_score_:.4f}")
         
         self.best_params = grid_search.best_params_
         self.model = grid_search.best_estimator_.named_steps['classifier']
-        
-        # Pipeline'ı güncelle
+          # Pipeline'ı güncelle
         optimized_pipeline = Pipeline([
             ('preprocessor', self.preprocessor),
             ('classifier', self.model)
@@ -175,80 +173,107 @@ class DeviceControlModel:
         
         return optimized_pipeline
     
-    def train(self, X_train, y_train, optimize=False):
-        """Modeli eğitir"""
-        print(f"{self.device_name} için model eğitiliyor...")
+    def train(self, X_train, y_train, preprocessor=None, optimize=False):
+        print("\n==================== START TRAIN ====================\n")
+        self.logger.info(f"{self.device_name} için model eğitiliyor...")        # Drop target column from features if present
+        if self.device_name in X_train.columns:
+            self.logger.warning(f"Target column {self.device_name} found in features. Dropping it.")
+            X_train = X_train.drop(columns=[self.device_name])
         
+        print("==== X_train columns before pipeline fit ====")
+        print(X_train.columns.tolist())
+        print("==== X_train dtypes before pipeline fit ====")
+        print(X_train.dtypes)
+        print("==== X_train shape before pipeline fit ====")
+        print(X_train.shape)
+        
+        if preprocessor is None:
+            preprocessor = SmartHomeDataProcessor()
+            preprocessor.fit(X_train)
+        self.preprocessor = preprocessor
+        self.pipeline = Pipeline([
+            ('preprocessor', self.preprocessor),
+            ('classifier', self.model)
+        ])
+        
+        print("\n==== BEFORE PIPELINE FIT ====")
         try:
-            # X_train DataFrame ise
-            if hasattr(X_train, 'select_dtypes'):
-                # Sadece sayısal sütunları al
-                X_numeric = X_train.select_dtypes(include=['int64', 'float64'])
-                print(f"Orijinal özellik sayısı: {X_train.shape[1]}, Sayısal özellik sayısı: {X_numeric.shape[1]}")
-                
-                # Sadece sayısal verilerle eğit
-                self.model.fit(X_numeric, y_train)
-                self.classes = self.model.classes_ if hasattr(self.model, 'classes_') else None
-                self.is_trained = True
-                score = self.model.score(X_numeric, y_train)
-                print(f"{self.device_name} modeli eğitildi, doğruluk: {score:.4f}")
-                return score
+            if optimize:
+                param_grid = self.get_default_param_grid()
+                # PERFORMANS OPTIMIZASYONU: cv=3, n_jobs=2, verbose=0
+                grid_search = GridSearchCV(self.pipeline, param_grid, cv=3, n_jobs=2, verbose=0)
+                grid_search.fit(X_train, y_train)
+                self.pipeline = grid_search.best_estimator_
+                self.best_params = grid_search.best_params_
+                self.logger.info(f"En iyi parametreler: {self.best_params}")
             else:
-                # Daha karmaşık çözüm gerekiyor, bu basit çözümün dışında
-                raise TypeError("X_train bir pandas DataFrame olmalıdır")
-                
+                self.pipeline.fit(X_train, y_train)
+            print("\n==== AFTER PIPELINE FIT ====")
         except Exception as e:
-            print(f"Eğitim hatası: {e}")
-            import traceback
-            traceback.print_exc()
+            print("\n==== ERROR DURING PIPELINE FIT ====")
+            print(e)
             raise
-    
+        self.classes = self.pipeline.named_steps['classifier'].classes_ if hasattr(self.pipeline.named_steps['classifier'], 'classes_') else None
+        self.is_trained = True
+        score = self.pipeline.score(X_train, y_train)
+        self.logger.info(f"{self.device_name} modeli eğitildi, doğruluk: {score:.4f}")
+        print("\n==================== END TRAIN ====================\n")
+        return score
+        
     def evaluate(self, X_test, y_test):
         """Test verisi üzerinde modeli değerlendirir"""
-        print(f"{self.device_name} modeli değerlendiriliyor...")
+        self.logger.info(f"{self.device_name} modeli değerlendiriliyor...")
     
         # Model eğitilmiş mi kontrol et
         if not hasattr(self, 'is_trained') or not self.is_trained:
-            print("Model henüz eğitilmedi!")
+            self.logger.warning("Model henüz eğitilmedi!")
             return {"error": "Model not trained"}
         
         try:
-            # X_test DataFrame ise, sadece sayısal sütunları al
-            if hasattr(X_test, 'select_dtypes'):
-                X_test_numeric = X_test.select_dtypes(include=['int64', 'float64'])
-                print(f"X_test: orijinal sütun sayısı: {X_test.shape[1]}, sayısal sütun sayısı: {X_test_numeric.shape[1]}")
-                X_test = X_test_numeric
-        
-            # Tahminleri al
-            y_pred = self.model.predict(X_test)
+            # X_test raw data ise, preprocessing pipeline'ından geçir
+            if hasattr(X_test, 'columns') and 'timestamp' in X_test.columns:
+                self.logger.info(f"X_test: raw data detected, applying preprocessing pipeline")
+                # Drop target column from features if present
+                if self.device_name in X_test.columns:
+                    self.logger.warning(f"Target column {self.device_name} found in test features. Dropping it.")
+                    X_test = X_test.drop(columns=[self.device_name])
+                # Pipeline predict kullanarak otomatik preprocessing yap
+                y_pred = self.pipeline.predict(X_test)
+            else:
+                # Eğer X_test zaten işlenmiş veri ise
+                self.logger.info(f"X_test: processed data detected")
+                # Pipeline predict kullan - bu işlenmiş veriyi bekliyor
+                y_pred = self.pipeline.predict(X_test)
             
             # Metrikler sözlüğünü başlat
             metrics = {
                 "accuracy": accuracy_score(y_test, y_pred),
                 "precision": precision_score(y_test, y_pred, average='weighted'),
                 "recall": recall_score(y_test, y_pred, average='weighted'),
-                "f1": f1_score(y_test, y_pred, average='weighted')
+                "f1": f1_score(y_test, y_pred, average='weighted'),
+                "confusion_matrix": confusion_matrix(y_test, y_pred)
             }
             
             # İkili sınıflandırma için AUC hesapla (güvenli bir şekilde)
             try:
                 # Eğer self.classes varsa ve uzunluğu 2 ise (ikili sınıflandırma)
-                if hasattr(self, 'classes') and self.classes is not None and len(self.classes) == 2:
+                if self.classes is not None and len(self.classes) == 2:
                     # predict_proba metodunu güvenli bir şekilde çağır
-                    if hasattr(self.model, 'predict_proba'):
-                        y_proba = self.model.predict_proba(X_test)[:, 1]
+                    if hasattr(self.pipeline.named_steps['classifier'], 'predict_proba'):
+                        y_proba = self.pipeline.predict_proba(X_test)[:, 1]
                         metrics["auc"] = roc_auc_score(y_test, y_proba)
             except Exception as e:
-                print(f"AUC hesaplama hatası: {e}")
+                self.logger.error(f"AUC hesaplama hatası: {e}")
             
             # Metrikleri yazdır
             for metric, value in metrics.items():
-                print(f"{metric.capitalize()}: {value:.4f}")
+                if metric != "confusion_matrix":
+                    self.logger.info(f"{metric.capitalize()}: {value:.4f}")
             
             self.metrics = metrics
             return metrics
         except Exception as e:
-            print(f"Model değerlendirme hatası: {e}")
+            self.logger.error(f"Model değerlendirme hatası: {e}")
             # Hata durumunda da metrics nesnesini oluştur ve error bilgisini ekle
             return {
                 "error": str(e),
@@ -259,44 +284,18 @@ class DeviceControlModel:
             }
     
     def predict(self, X):
-        """
-        Yeni veriler için tahmin yapar
-        
-        Args:
-            X: Özellikler
-            
-        Returns:
-            numpy.ndarray: Tahminler
-        """
-        if self.model is None or self.preprocessor is None:
-            raise ValueError("Model henüz eğitilmemiş")
-        
-        pipeline = Pipeline([
-            ('preprocessor', self.preprocessor),
-            ('classifier', self.model)
-        ])
-        
-        return pipeline.predict(X)
+        if not hasattr(self, 'pipeline') or self.pipeline is None:
+            raise ValueError("Model pipeline henüz eğitilmemiş.")
+        return self.pipeline.predict(X)
     
     def predict_proba(self, X):
-        """
-        Yeni veriler için olasılık tahminleri yapar
-        
-        Args:
-            X: Özellikler
-            
-        Returns:
-            numpy.ndarray: Olasılık tahminleri
-        """
-        if self.model is None or self.preprocessor is None:
-            raise ValueError("Model henüz eğitilmemiş")
-        
-        pipeline = Pipeline([
-            ('preprocessor', self.preprocessor),
-            ('classifier', self.model)
-        ])
-        
-        return pipeline.predict_proba(X)
+        if not hasattr(self, 'pipeline') or self.pipeline is None:
+            raise ValueError("Model pipeline henüz eğitilmemiş.")
+        classifier = self.pipeline.named_steps['classifier']
+        if hasattr(classifier, 'predict_proba'):
+            return self.pipeline.predict_proba(X)
+        else:
+            raise AttributeError(f"Model {self.model_type} predict_proba metodunu desteklemiyor.")
     
     def plot_confusion_matrix(self, normalize=False, figsize=(8, 6), save_path=None):
         """
@@ -307,7 +306,7 @@ class DeviceControlModel:
             figsize (tuple): Şekil boyutu
             save_path (str): Kaydedilecek dosya yolu
         """
-        if 'confusion_matrix' not in self.metrics:
+        if 'confusion_matrix' not in self.metrics or self.metrics['confusion_matrix'] is None:
             raise ValueError("Önce evaluate() metodunu çağırmalısınız")
         
         cm = self.metrics['confusion_matrix']
@@ -315,11 +314,13 @@ class DeviceControlModel:
             cm = cm.astype('float') / cm.sum(axis=1)[:, np.newaxis]
         
         plt.figure(figsize=figsize)
+        xticklabels = self.classes if self.classes is not None else 'auto'
+        yticklabels = self.classes if self.classes is not None else 'auto'
         sns.heatmap(
             cm, annot=True, fmt='.2f' if normalize else 'd', 
             cmap='Blues', square=True,
-            xticklabels=self.classes, 
-            yticklabels=self.classes
+            xticklabels=xticklabels, 
+            yticklabels=yticklabels
         )
         plt.xlabel('Tahmin Edilen Etiket')
         plt.ylabel('Gerçek Etiket')
@@ -327,7 +328,7 @@ class DeviceControlModel:
         
         if save_path:
             plt.savefig(save_path)
-            print(f"Karmaşıklık matrisi {save_path} konumuna kaydedildi")
+            self.logger.info(f"Karmaşıklık matrisi {save_path} konumuna kaydedildi")
         
         plt.tight_layout()
         plt.show()
@@ -360,7 +361,7 @@ class DeviceControlModel:
         
         if save_path:
             plt.savefig(save_path)
-            print(f"ROC eğrisi {save_path} konumuna kaydedildi")
+            self.logger.info(f"ROC eğrisi {save_path} konumuna kaydedildi")
         
         plt.tight_layout()
         plt.show()
@@ -374,35 +375,21 @@ class DeviceControlModel:
             figsize (tuple): Şekil boyutu
             save_path (str): Kaydedilecek dosya yolu
         """
-        if hasattr(self.model, 'feature_importances_'):
+        if hasattr(self.pipeline.named_steps['classifier'], 'feature_importances_'):
             # Feature importances alma yöntemi (tree-based modeller için)
-            importances = self.model.feature_importances_
+            importances = self.pipeline.named_steps['classifier'].feature_importances_
             
             # Özellik isimleri ve önemlerini sözlükte tut
             feature_importance = {}
             
-            # Hem sayısal hem kategorik özellikleri hesaba kat
-            if hasattr(self.preprocessor, 'transformers_'):
-                # ColumnTransformer kullanıldığı durumda
-                all_features = []
-                for name, transformer, features in self.preprocessor.transformers_:
-                    if name != 'remainder':
-                        if hasattr(transformer, 'get_feature_names_out'):
-                            # OneHotEncoder gibi transformer'lar için
-                            transformed_feature_names = transformer.get_feature_names_out(features)
-                            all_features.extend(transformed_feature_names)
-                        else:
-                            # StandardScaler gibi transformer'lar için
-                            all_features.extend(features)
-                
-                # Eğer özellik sayısı eşit değilse, basitçe orijinal özellik isimlerini kullanalım
-                if len(all_features) != len(importances):
-                    all_features = self.feature_names
-            else:
-                all_features = self.feature_names
-                
+            # Her zaman self.feature_names kullan
+            all_features = self.feature_names
+            
             # Özellik sayısını importance uzunluğuna göre ayarla
-            all_features = all_features[:len(importances)]
+            if all_features is not None and importances is not None:
+                all_features = all_features[:len(importances)]
+            else:
+                all_features = []
             
             # Özellik-önem eşleştirmesi
             feature_importance = dict(zip(all_features, importances))
@@ -423,12 +410,12 @@ class DeviceControlModel:
             
             if save_path:
                 plt.savefig(save_path)
-                print(f"Özellik önemi grafiği {save_path} konumuna kaydedildi")
+                self.logger.info(f"Özellik önemi grafiği {save_path} konumuna kaydedildi")
             
             plt.tight_layout()
             plt.show()
         else:
-            print(f"Bu model türü ({self.model_type}) özellik önemi bilgisi sağlamıyor")
+            self.logger.warning(f"Bu model türü ({self.model_type}) özellik önemi bilgisi sağlamıyor")
     
     def save_model(self, directory=None):
         """
@@ -470,7 +457,7 @@ class DeviceControlModel:
         
         # Modeli kaydet
         joblib.dump(model_data, model_path)
-        print(f"Model {model_path} konumuna kaydedildi")
+        self.logger.info(f"Model {model_path} konumuna kaydedildi")
         
         return model_path
     
@@ -490,8 +477,7 @@ class DeviceControlModel:
         
         # Yeni model nesnesi oluştur
         model = cls(model_data['device_name'], model_data['model_type'])
-        
-        # Model verilerini yükle
+          # Model verilerini yükle
         model.model = model_data['model']
         model.preprocessor = model_data['preprocessor']
         model.feature_names = model_data['feature_names']
@@ -500,7 +486,17 @@ class DeviceControlModel:
         model.best_params = model_data['best_params']
         model.metrics = model_data['metrics']
         
-        print(f"{model_path} konumundan {model.device_name} modeli yüklendi")
+        # Pipeline'ı yeniden oluştur
+        if model.preprocessor is not None and model.model is not None:
+            model.pipeline = Pipeline([
+                ('preprocessor', model.preprocessor),
+                ('classifier', model.model)
+            ])
+            model.is_trained = True
+        else:
+            model.logger.warning("Pipeline oluşturulamadı: preprocessor veya model eksik")
+        
+        model.logger.info(f"{model_path} konumundan {model.device_name} modeli yüklendi")
         
         return model
 
@@ -536,8 +532,7 @@ def test_model_training():
     
     # Modeli oluştur ve eğit
     model = DeviceControlModel(device_name, model_type='random_forest')
-    model.preprocessor = preprocessor
-    model.train(X_train, y_train, optimize=True)
+    model.train(X_train, y_train, preprocessor=preprocessor, optimize=True)
     
     # Modeli değerlendir
     metrics = model.evaluate(X_test, y_test)
@@ -545,7 +540,7 @@ def test_model_training():
     # Görselleştirmeler
     try:
         model.plot_confusion_matrix()
-        if len(model.classes) == 2:  # İkili sınıflandırma ise
+        if model.classes is not None and len(model.classes) == 2:  # İkili sınıflandırma ise
             model.plot_roc_curve()
         model.plot_feature_importance()
     except Exception as e:

@@ -3,6 +3,7 @@ import json
 import os
 from datetime import datetime
 import pandas as pd
+from src.config import config
 
 class RulesEngine:
     """
@@ -17,39 +18,13 @@ class RulesEngine:
         Args:
             use_ml_model (bool): ML modeli kullanılıp kullanılmayacağı
         """
+        self.logger = logging.getLogger(__name__)
         self.rules = []
         self.use_ml_model = use_ml_model
         self.ml_model = None
         self.decision_history = []
         self.last_device_states = {}
         self.ml_confidence_threshold = 0.7  # ML tahminleri için minimum güven eşiği
-        self.setup_logging()
-    
-    def setup_logging(self):
-        """
-        Loglama sistemini yapılandırır
-        """
-        log_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "logs")
-        
-        # Dizin yoksa oluştur
-        if not os.path.exists(log_dir):
-            os.makedirs(log_dir)
-        
-        # Log dosyası adı
-        log_file = os.path.join(log_dir, f"automation_{datetime.now().strftime('%Y%m%d')}.log")
-        
-        # Logging yapılandırması
-        logging.basicConfig(
-            level=logging.INFO,
-            format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-            handlers=[
-                logging.FileHandler(log_file),
-                logging.StreamHandler()
-            ]
-        )
-        
-        self.logger = logging.getLogger("RulesEngine")
-        self.logger.info("Kural motoru başlatıldı")
     
     def set_ml_model(self, model):
         """
@@ -60,7 +35,6 @@ class RulesEngine:
         """
         self.ml_model = model
         self.use_ml_model = True if model else False
-        self.logger.info(f"ML modeli ayarlandı: {model is not None}")
     
     def add_rule(self, name, condition_func, action_func, priority=1, description=None):
         """
@@ -84,7 +58,6 @@ class RulesEngine:
         
         self.rules.append(rule)
         self.rules.sort(key=lambda x: x['priority'], reverse=True)
-        self.logger.info(f"Kural eklendi: {name} (öncelik: {priority})")
         
         return rule
     
@@ -101,10 +74,8 @@ class RulesEngine:
         for rule in self.rules:
             if rule['name'] == rule_name:
                 rule['enabled'] = False
-                self.logger.info(f"Kural devre dışı bırakıldı: {rule_name}")
                 return True
         
-        self.logger.warning(f"Devre dışı bırakılacak kural bulunamadı: {rule_name}")
         return False
     
     def enable_rule(self, rule_name):
@@ -120,10 +91,8 @@ class RulesEngine:
         for rule in self.rules:
             if rule['name'] == rule_name:
                 rule['enabled'] = True
-                self.logger.info(f"Kural etkinleştirildi: {rule_name}")
                 return True
         
-        self.logger.warning(f"Etkinleştirilecek kural bulunamadı: {rule_name}")
         return False
     
     def evaluate_rules(self, current_state, device_states, ml_predictions=None):
@@ -144,11 +113,9 @@ class RulesEngine:
         # Ensure ml_confidence_threshold is defined (fallback if __init__ wasn't updated)
         if not hasattr(self, 'ml_confidence_threshold'):
             self.ml_confidence_threshold = 0.7
-            self.logger.warning("Added missing ml_confidence_threshold attribute")
         
         # Makine öğrenmesi tahminleri varsa, ML modelinden gelen önerilerini uygula
         if self.use_ml_model and ml_predictions and self.ml_model:
-            self.logger.info(f"ML tahmini: {ml_predictions}")
             
             for device_name, prediction in ml_predictions.items():
                 # Cihaz zaten device_states içinde tanımlı mı kontrol et
@@ -161,12 +128,6 @@ class RulesEngine:
                         # Yeterince güvenli tahmin - yeni durumu ayarla
                         if 'state' in prediction:
                             updated_states[device_name] = prediction['state']
-                            # Karar geçmişine ekle
-                            self._add_decision({
-                                'device': device_name,
-                                'action': 'Set to ' + str(prediction['state']),
-                                'reason': f"ML model prediction (confidence: {prediction['probability']:.2f})"
-                            })
         
         # Kuralları öncelik sırasına göre değerlendir
         sorted_rules = sorted(self.rules, key=lambda r: r['priority'], reverse=True)
@@ -179,7 +140,6 @@ class RulesEngine:
                 
                 # Değişiklikler varsa uygula ve kaydet
                 if changes:
-                    self.logger.info(f"Kural tetiklendi: {rule['name']} - Değişiklikler: {changes}")
                     
                     for device, state in changes.items():
                         updated_states[device] = state
@@ -193,7 +153,6 @@ class RulesEngine:
                         })
         
         # Güncellenmiş durumları döndür
-        self.logger.info(f"Cihaz durumları güncellendi: {updated_states}")
         return updated_states
     
     def record_decision(self, rule_name, description, current_state, before_state, changes, confidence):
@@ -247,8 +206,6 @@ class RulesEngine:
         with open(filepath, 'w') as f:
             # datetime nesneleri için özel JSON encoder kullanmamız gerekiyor
             json.dump(self.decision_history, f, indent=2, default=str)
-        
-        self.logger.info(f"Karar tarihçesi {filepath} dosyasına kaydedildi")
         
         return filepath
     
@@ -312,21 +269,21 @@ def create_default_rules(rules_engine):
     """
     # Sıcaklık kontrolü için kurallar
     def high_temp_condition(state):
-        for room in ['Salon', 'Yatak Odası', 'Çocuk Odası']:
+        for room in config['rooms']:
             temp_key = f"{room}_Sıcaklık"
-            if temp_key in state and state[temp_key] > 26:
+            if temp_key in state and state[temp_key] > config['automation_thresholds']['high_temp_threshold']:
                 return True
         return False
     
     def turn_on_ac(state, devices):
         updated_devices = {}
-        for room in ['Salon', 'Yatak Odası', 'Çocuk Odası']:
+        for room in config['rooms']:
             temp_key = f"{room}_Sıcaklık"
             occupancy_key = f"{room}_Doluluk"
             device_key = f"{room}_Klima"
             
             # Sıcaklık yüksek ve oda doluysa klimayı çalıştır
-            if temp_key in state and state[temp_key] > 26:
+            if temp_key in state and state[temp_key] > config['automation_thresholds']['high_temp_threshold']:
                 if occupancy_key in state and state[occupancy_key]:
                     updated_devices[device_key] = True
         
@@ -342,20 +299,20 @@ def create_default_rules(rules_engine):
     
     # Düşük sıcaklık kontrolü
     def low_temp_condition(state):
-        for room in ['Salon', 'Yatak Odası', 'Çocuk Odası']:
+        for room in config['rooms']:
             temp_key = f"{room}_Sıcaklık"
-            if temp_key in state and state[temp_key] < 18:
+            if temp_key in state and state[temp_key] < config['automation_thresholds']['low_temp_threshold']:
                 return True
         return False
     
     def turn_off_ac(state, devices):
         updated_devices = {}
-        for room in ['Salon', 'Yatak Odası', 'Çocuk Odası']:
+        for room in config['rooms']:
             temp_key = f"{room}_Sıcaklık"
             device_key = f"{room}_Klima"
             
             # Sıcaklık düşükse klimayı kapat
-            if temp_key in state and state[temp_key] < 18:
+            if temp_key in state and state[temp_key] < config['automation_thresholds']['low_temp_threshold']:
                 updated_devices[device_key] = False
         
         return updated_devices
@@ -374,12 +331,12 @@ def create_default_rules(rules_engine):
         current_hour = datetime.now().hour
         is_night = current_hour >= 19 or current_hour <= 7
         
-        for room in ['Salon', 'Yatak Odası', 'Çocuk Odası', 'Mutfak', 'Banyo']:
+        for room in config['rooms']:
             light_key = f"{room}_Işık"
             movement_key = f"{room}_Hareket"
             
             if movement_key in state and state[movement_key]:
-                if is_night or (light_key in state and state[light_key] < 100):
+                if is_night or (light_key in state and state[light_key] < config['automation_thresholds']['low_light_threshold']):
                     return True
         
         return False
@@ -389,14 +346,14 @@ def create_default_rules(rules_engine):
         current_hour = datetime.now().hour
         is_night = current_hour >= 19 or current_hour <= 7
         
-        for room in ['Salon', 'Yatak Odası', 'Çocuk Odası', 'Mutfak', 'Banyo']:
+        for room in config['rooms']:
             light_key = f"{room}_Işık"
             movement_key = f"{room}_Hareket"
             device_key = f"{room}_Lamba"
             
             # Gece veya düşük ışık seviyesinde hareket varsa lambayı aç
             if movement_key in state and state[movement_key]:
-                if is_night or (light_key in state and state[light_key] < 100):
+                if is_night or (light_key in state and state[light_key] < config['automation_thresholds']['low_light_threshold']):
                     updated_devices[device_key] = True
             # Hareket yoksa lambayı kapat
             elif movement_key in state and not state[movement_key]:
@@ -413,21 +370,18 @@ def create_default_rules(rules_engine):
     )
     
     # Enerji tasarrufu kuralı - Oda boşsa cihazları kapat
-    def energy_save_condition(state, devices):
-        # Herhangi bir oda boşsa ve cihazlar açıksa
-        for room in ['Salon', 'Yatak Odası', 'Çocuk Odası', 'Mutfak', 'Banyo']:
+    def energy_save_condition(state):
+        # Herhangi bir oda boşsa energy saving koşulunu kontrol et
+        for room in config['rooms']:
             occupancy_key = f"{room}_Doluluk"
             if occupancy_key in state and not state[occupancy_key]:
-                for device in ['Lamba', 'Klima']:
-                    device_key = f"{room}_{device}"
-                    if device_key in devices and devices[device_key]:
-                        return True
+                return True
         return False
     
     def turn_off_devices(state, devices):
         updated_devices = {}
         
-        for room in ['Salon', 'Yatak Odası', 'Çocuk Odası', 'Mutfak', 'Banyo']:
+        for room in config['rooms']:
             occupancy_key = f"{room}_Doluluk"
             last_movement_key = f"{room}_SonHareket_Dakika"
             
@@ -458,25 +412,25 @@ def create_default_rules(rules_engine):
     
     # CO2 kontrolü için kurallar
     def high_co2_condition(state):
-        for room in ['Salon', 'Yatak Odası', 'Çocuk Odası', 'Mutfak']:
+        for room in config['rooms']:
             co2_key = f"{room}_CO2"
-            if co2_key in state and state[co2_key] > 800:
+            if co2_key in state and state[co2_key] > config['automation_thresholds']['high_co2_threshold']:
                 return True
         return False
     
     def control_ventilation(state, devices):
         updated_devices = {}
         
-        for room in ['Salon', 'Yatak Odası', 'Çocuk Odası', 'Mutfak']:
+        for room in config['rooms']:
             co2_key = f"{room}_CO2"
             device_key = f"{room}_Havalandırma"
             
             if co2_key in state and device_key in devices:
                 # CO2 seviyesi yüksekse havalandırmayı aç
-                if state[co2_key] > 800:
+                if state[co2_key] > config['automation_thresholds']['high_co2_threshold']:
                     updated_devices[device_key] = True
                 # CO2 seviyesi normale döndüyse havalandırmayı kapat
-                elif state[co2_key] < 600 and devices[device_key]:
+                elif state[co2_key] < config['automation_thresholds']['low_co2_threshold'] and devices[device_key]:
                     updated_devices[device_key] = False
         
         return updated_devices
@@ -491,22 +445,22 @@ def create_default_rules(rules_engine):
     
     # Nem kontrolü için kurallar
     def humidity_condition(state):
-        for room in ['Salon', 'Yatak Odası', 'Çocuk Odası', 'Banyo', 'Mutfak']:
+        for room in config['rooms']:
             humidity_key = f"{room}_Nem"
-            if humidity_key in state and (state[humidity_key] > 70 or state[humidity_key] < 30):
+            if humidity_key in state and (state[humidity_key] > config['automation_thresholds']['high_humidity_threshold'] or state[humidity_key] < config['automation_thresholds']['low_humidity_threshold']):
                 return True
         return False
     
     def control_humidity(state, devices):
         updated_devices = {}
         
-        for room in ['Salon', 'Yatak Odası', 'Çocuk Odası', 'Mutfak', 'Banyo']:
+        for room in config['rooms']:
             humidity_key = f"{room}_Nem"
             ventilation_key = f"{room}_Havalandırma"
             
             if humidity_key in state and ventilation_key in devices:
                 # Nem yüksekse havalandırmayı aç
-                if state[humidity_key] > 70:
+                if state[humidity_key] > config['automation_thresholds']['high_humidity_threshold']:
                     updated_devices[ventilation_key] = True
         
         return updated_devices
@@ -522,12 +476,12 @@ def create_default_rules(rules_engine):
     # Sabah perdeleri açma kuralı
     def morning_condition(state):
         current_hour = datetime.now().hour
-        return 7 <= current_hour <= 9
+        return config['automation_thresholds']['morning_start'] <= current_hour <= config['automation_thresholds']['morning_end']
     
     def open_curtains(state, devices):
         updated_devices = {}
         
-        for room in ['Salon', 'Yatak Odası', 'Çocuk Odası']:
+        for room in config['rooms']:
             curtain_key = f"{room}_Perde"
             if curtain_key in devices:
                 updated_devices[curtain_key] = True
@@ -545,12 +499,12 @@ def create_default_rules(rules_engine):
     # Akşam perdeleri kapatma kuralı
     def evening_condition(state):
         current_hour = datetime.now().hour
-        return 19 <= current_hour <= 23
+        return config['automation_thresholds']['evening_start'] <= current_hour <= config['automation_thresholds']['evening_end']
     
     def close_curtains(state, devices):
         updated_devices = {}
         
-        for room in ['Salon', 'Yatak Odası', 'Çocuk Odası']:
+        for room in config['rooms']:
             curtain_key = f"{room}_Perde"
             if curtain_key in devices:
                 updated_devices[curtain_key] = False

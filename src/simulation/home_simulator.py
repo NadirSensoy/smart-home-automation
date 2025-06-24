@@ -11,9 +11,10 @@ import logging
 
 # İç modülleri içe aktarma
 from src.data_simulation.data_generator import HomeDataGenerator
-from src.automation.rules_engine import RulesEngine
+from src.automation.rules_engine import RulesEngine, create_default_rules
 from src.models.model_manager import SmartHomeModelManager
 from src.utils.visualization import SimulationVisualizer
+from src.data_processing.preprocessing import process_raw_data
 
 class SmartHomeSimulator:
     """
@@ -35,6 +36,7 @@ class SmartHomeSimulator:
             ml_model_path (str): ML model yöneticisinin dosya yolu (None ise yeni model eğitilir)
             simulation_speed (float): Simülasyon hızı çarpanı (1.0 = gerçek zamanla aynı)
         """
+        self.logger = logging.getLogger(__name__)
         # Simülasyon parametreleri
         self.rooms = rooms or ["Salon", "Yatak Odası", "Çocuk Odası", "Mutfak", "Banyo"]
         self.num_residents = num_residents
@@ -72,30 +74,6 @@ class SmartHomeSimulator:
         
         # Görselleştirme
         self.visualizer = SimulationVisualizer()
-        
-        # Loglama
-        self._setup_logging()
-    
-    def _setup_logging(self):
-        """Simülasyon için log yapılandırması yapar"""
-        log_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "logs")
-        if not os.path.exists(log_dir):
-            os.makedirs(log_dir)
-        
-        log_file = os.path.join(log_dir, f"simulation_{datetime.now().strftime('%Y%m%d_%H%M%S')}.log")
-        
-        # Logger yapılandırması
-        logging.basicConfig(
-            level=logging.INFO,
-            format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-            handlers=[
-                logging.FileHandler(log_file),
-                logging.StreamHandler()
-            ]
-        )
-        
-        self.logger = logging.getLogger("SmartHomeSimulator")
-        self.logger.info("Simülasyon başlatıldı")
     
     def train_ml_model(self, days=3):
         """
@@ -133,102 +111,8 @@ class SmartHomeSimulator:
     def setup_default_rules(self):
         """Kural motoruna varsayılan kuralları ekler"""
         self.logger.info("Varsayılan kurallar ayarlanıyor")
-        
-        # Sıcaklık kontrolü
-        def high_temp_condition(state):
-            for room in self.rooms:
-                if f"{room}_Sıcaklık" in state and state[f"{room}_Sıcaklık"] > 26:
-                    return True
-            return False
-        
-        def turn_on_ac(state, devices):
-            changes = {}
-            for room in self.rooms:
-                if f"{room}_Sıcaklık" in state and state[f"{room}_Sıcaklık"] > 26:
-                    if f"{room}_Klima" in devices:
-                        changes[f"{room}_Klima"] = True
-            return changes
-        
-        self.rules_engine.add_rule(
-            name="Yüksek Sıcaklık - Klima Aç", 
-            condition_func=high_temp_condition,
-            action_func=turn_on_ac,
-            priority=2,
-            description="Oda sıcaklığı 26°C üzerinde ise klimayı aç"
-        )
-        
-        # Boş oda kontrolü
-        def empty_room_condition(state):
-            for room in self.rooms:
-                if f"{room}_Doluluk" in state and state[f"{room}_Doluluk"] == False:
-                    return True
-            return False
-        
-        def turn_off_lights_empty_room(state, devices):
-            changes = {}
-            for room in self.rooms:
-                if f"{room}_Doluluk" in state and state[f"{room}_Doluluk"] == False:
-                    # Oda boşsa ve lamba açıksa
-                    if f"{room}_Lamba" in devices and devices[f"{room}_Lamba"]:
-                        changes[f"{room}_Lamba"] = False
-            return changes
-        
-        self.rules_engine.add_rule(
-            name="Boş Oda - Lamba Kapat", 
-            condition_func=empty_room_condition,
-            action_func=turn_off_lights_empty_room,
-            priority=1,
-            description="Oda boş ise ışıkları kapat"
-        )
-        
-        # Gece modu
-        def night_time_condition(state):
-            hour = self.simulation_time.hour
-            return 22 <= hour or hour <= 6
-        
-        def night_mode_devices(state, devices):
-            changes = {}
-            for room in self.rooms:
-                # Yatak odasında düşük ışık
-                if room == "Yatak Odası" and f"{room}_Doluluk" in state and state[f"{room}_Doluluk"]:
-                    changes[f"{room}_Lamba"] = True
-                # Diğer odalarda ışıkları kapat
-                elif f"{room}_Lamba" in devices and devices[f"{room}_Lamba"]:
-                    if f"{room}_Doluluk" in state and state[f"{room}_Doluluk"] == False:
-                        changes[f"{room}_Lamba"] = False
-                # Perdeleri kapat
-                if f"{room}_Perde" in devices:
-                    changes[f"{room}_Perde"] = False
-            return changes
-        
-        self.rules_engine.add_rule(
-            name="Gece Modu", 
-            condition_func=night_time_condition,
-            action_func=night_mode_devices,
-            priority=3,
-            description="Gece saatlerinde (22:00-06:00) perdeleri kapat, boş odalarda ışıkları kapat"
-        )
-        
-        # Sabah rutini
-        def morning_time_condition(state):
-            hour = self.simulation_time.hour
-            return 7 <= hour <= 9
-        
-        def morning_routine_devices(state, devices):
-            changes = {}
-            for room in self.rooms:
-                # Perdeleri aç
-                if f"{room}_Perde" in devices:
-                    changes[f"{room}_Perde"] = True
-            return changes
-        
-        self.rules_engine.add_rule(
-            name="Sabah Rutini", 
-            condition_func=morning_time_condition,
-            action_func=morning_routine_devices,
-            priority=2,
-            description="Sabah saatlerinde (07:00-09:00) perdeleri aç"
-        )
+        # Remove all local rule definitions. Only use create_default_rules from rules_engine.py
+        create_default_rules(self.rules_engine)
     
     def step(self):
         """
@@ -267,7 +151,7 @@ class SmartHomeSimulator:
                 
                 # Try feature bypass with the enhanced feature set
                 try:
-                    ml_predictions = self.ml_model_manager.predict_with_feature_bypass(combined_data)
+                    ml_predictions = self.ml_model_manager.predict_device_states(combined_data)
                     self.logger.info("Successfully made predictions with feature bypass")
                 except Exception as e:
                     self.logger.error(f"Feature bypass failed: {e}")
@@ -436,10 +320,10 @@ class SmartHomeSimulator:
         """Get the feature names that the model was trained on"""
         try:
             # First try to get feature names directly from the first model's preprocessing
-            if hasattr(self.ml_model_manager, 'device_models') and self.ml_model_manager.device_models:
+            if self.ml_model_manager is not None and hasattr(self.ml_model_manager, 'models') and self.ml_model_manager.models:
                 # Get the first device model key
-                first_model_key = list(self.ml_model_manager.device_models.keys())[0]
-                model = self.ml_model_manager.device_models[first_model_key]
+                first_model_key = list(self.ml_model_manager.models.keys())[0]
+                model = self.ml_model_manager.models[first_model_key]
                 
                 # Try to extract feature names from the model directly
                 feature_names = None
@@ -684,72 +568,20 @@ class SmartHomeSimulator:
             return pd.DataFrame(0, index=input_df.index, columns=expected_features)
     
     def predict_next_state(self, current_state):
-        """Make predictions using the ML model with proper feature handling"""
+        """Make predictions using the ML model pipeline only"""
         if not self.ml_model_manager:
             self.logger.warning("ML model manager not available for predictions")
             return self._get_default_prediction()
-        
         try:
-            # Create a DataFrame from the current state
-            input_data = self._prepare_prediction_input(current_state)
-            
-            # First try the direct feature bypass method
-            if hasattr(self.ml_model_manager, 'predict_with_feature_bypass'):
-                try:
-                    predictions = self.ml_model_manager.predict_with_feature_bypass(input_data)
-                    self.logger.info("Successfully made predictions using feature bypass")
-                    return predictions
-                except Exception as bypass_error:
-                    self.logger.error(f"Feature bypass prediction failed: {str(bypass_error)}")
-                    # Continue to standard approach if this fails
-            
-            # Standard approach with feature alignment
-            # Get the expected feature names from the model
-            expected_features = self._get_model_expected_features()
-            
-            if expected_features is not None:
-                self.logger.info(f"Got expected features: {len(expected_features)} features")
-                
-                # Generate all derived features needed
-                derived_features = self._generate_derived_features(input_data)
-                
-                # Create a new dataframe with all needed features
-                aligned_data = pd.DataFrame(index=input_data.index)
-                
-                # First, copy over any direct matches from input data
-                for col in expected_features:
-                    if col in input_data.columns:
-                        aligned_data[col] = input_data[col]
-                    elif col in derived_features.columns:
-                        # Then get any derived features
-                        aligned_data[col] = derived_features[col]
-                    else:
-                        # Default for any remaining
-                        aligned_data[col] = 0
-                        
-                # Ensure the column order matches exactly
-                final_input = aligned_data[expected_features]
-                
-                self.logger.debug(f"Final input shape: {final_input.shape}, expected features: {len(expected_features)}")
-                
-                try:
-                    # Try the standard prediction
-                    predictions = self.ml_model_manager.predict_device_states(final_input)
-                    self.logger.info("Successfully made predictions using aligned features")
-                    return predictions
-                except Exception as e1:
-                    self.logger.error(f"Standard prediction failed: {str(e1)}")
-                    
-                    try:
-                        # Try with robust prediction
-                        return self._make_robust_prediction(final_input)
-                    except Exception as e2:
-                        self.logger.error(f"Robust prediction failed: {str(e2)}")
-                        return self._get_default_prediction()
+            # Prepare input as DataFrame
+            if isinstance(current_state, dict):
+                input_data = pd.DataFrame([current_state])
             else:
-                self.logger.warning("Could not determine expected features, using default prediction")
-                return self._get_default_prediction()
-                
+                input_data = current_state.copy()
+            # Use the model manager's pipeline for prediction
+            predictions = self.ml_model_manager.predict_device_states(input_data)
+            self.logger.info("Successfully made predictions using ML pipeline")
+            return predictions
         except Exception as e:
             self.logger.error(f"Error during prediction process: {str(e)}")
             return self._get_default_prediction()
@@ -827,7 +659,7 @@ class SmartHomeSimulator:
         
 
 # Simülatör sınıfını test etmek için yardımcı fonksiyon
-def run_simulation_demo(steps=50, rooms=None, display=True):
+def run_simulation_demo(steps=50, rooms=None, display=True, ml_model_path=None):
     """
     Simülasyon demosunu çalıştırır
     
@@ -835,6 +667,7 @@ def run_simulation_demo(steps=50, rooms=None, display=True):
         steps (int): Simülasyon adım sayısı
         rooms (list): Simüle edilecek odalar
         display (bool): Görsel çıktı olup olmayacağı
+        ml_model_path (str): Önceden eğitilmiş ML model dosyası yolu
         
     Returns:
         SmartHomeSimulator: Çalıştırılan simülatör
@@ -849,6 +682,7 @@ def run_simulation_demo(steps=50, rooms=None, display=True):
         num_residents=3,
         time_step=5,  # 5 dakikalık adımlar
         use_ml=True,
+        ml_model_path=ml_model_path,  # Pass the model path to avoid retraining
         simulation_speed=2.0  # 2x hızlı simülasyon
     )
     

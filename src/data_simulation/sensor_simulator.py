@@ -3,6 +3,7 @@ import pandas as pd
 from datetime import datetime, timedelta
 import random
 import os
+from src.config import config
 
 class SensorSimulator:
     """
@@ -19,21 +20,22 @@ class SensorSimulator:
             start_time (datetime): Simülasyonun başlangıç zamanı
             time_step (int): Simülasyon adımları arasındaki dakika farkı
         """
-        self.rooms = rooms or ["Salon", "Yatak Odası", "Çocuk Odası", "Mutfak", "Banyo"]
+        self.rooms = rooms or config["rooms"]
         self.start_time = start_time or datetime.now()
         self.time_step = time_step
         self.current_time = self.start_time
         
-        # Cihazlar ve bunların durumları
-        self.devices = {
-            "Salon": {"Klima": False, "Lamba": False, "Perde": False},
-            "Yatak Odası": {"Klima": False, "Lamba": False, "Perde": False},
-            "Çocuk Odası": {"Klima": False, "Lamba": False, "Perde": False},
-            "Mutfak": {"Lamba": False, "Havalandırma": False},
-            "Banyo": {"Lamba": False, "Havalandırma": False}
-        }
+        # Devices setup using config
+        self.devices = {}
+        for room in self.rooms:
+            self.devices[room] = {}
+            for device in config["devices_per_room"]:
+                # Only add devices that make sense for the room
+                if (room in ["Salon", "Yatak Odası", "Çocuk Odası"] and device in ["Klima", "Lamba", "Perde"]) or \
+                   (room in ["Mutfak", "Banyo"] and device in ["Lamba", "Havalandırma"]):
+                    self.devices[room][device] = False
         
-        # Her odanın başlangıç durumunu ayarla
+        # Room status setup using config
         self.room_status = {}
         for room in self.rooms:
             self.room_status[room] = {

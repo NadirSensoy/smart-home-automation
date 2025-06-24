@@ -1,0 +1,73 @@
+2025-06-23 17:47:33,938 - root - INFO - Logging configured.
+2025-06-23 17:47:33,939 - AkilliEvOtomasyonu - INFO - Akilli Ev Otomasyon Sistemi baslatiliyor
+2025-06-23 17:47:33,941 - Simülasyon - INFO - Simülasyon başlatılıyor: interactive modu
+2025-06-23 17:47:33,943 - src.simulation.interactive - INFO - 
+============================================================
+2025-06-23 17:47:33,943 - src.simulation.interactive - INFO -    AKILLI EV OTOMASYON SİSTEMİ - İNTERAKTİF SİMÜLASYON
+2025-06-23 17:47:33,943 - src.simulation.interactive - INFO - ============================================================
+2025-06-23 17:47:33,978 - src.simulation.interactive - INFO - Odalar: Salon, Yatak Odası, Çocuk Odası, Mutfak, Banyo
+2025-06-23 17:47:33,978 - src.simulation.interactive - INFO - Kullanıcı sayısı: 3
+2025-06-23 17:47:33,979 - src.simulation.interactive - INFO - Makine öğrenmesi: Aktif
+2025-06-23 17:47:33,979 - src.simulation.interactive - INFO - 
+=== AKILLI EV SİMÜLASYONU KOMUTLARI ===
+2025-06-23 17:47:33,980 - src.simulation.interactive - INFO - start [adım]     : Simülasyonu başlatır (opsiyonel: adım sayısı)
+2025-06-23 17:47:33,982 - src.simulation.interactive - INFO - pause            : Simülasyonu duraklatır
+2025-06-23 17:47:33,984 - src.simulation.interactive - INFO - resume           : Simülasyonu devam ettirir
+2025-06-23 17:47:33,984 - src.simulation.interactive - INFO - stop             : Simülasyonu durdurur
+2025-06-23 17:47:33,985 - src.simulation.interactive - INFO - speed [hız]      : Simülasyon hızını ayarlar (ör: 1.0, 2.0)
+2025-06-23 17:47:33,985 - src.simulation.interactive - INFO - status           : Mevcut simülasyon durumunu gösterir
+2025-06-23 17:47:33,986 - src.simulation.interactive - INFO - device [oda] [cihaz] [durum] : Cihaz durumunu değiştirir
+2025-06-23 17:47:33,986 - src.simulation.interactive - INFO -                    Örnek: device Salon Lamba on
+2025-06-23 17:47:33,986 - src.simulation.interactive - INFO - save             : Simülasyon geçmişini kaydeder
+2025-06-23 17:47:33,987 - src.simulation.interactive - INFO - report           : Simülasyon raporu oluşturur
+2025-06-23 17:47:33,987 - src.simulation.interactive - INFO - visualize        : Güncel durumu görselleştirir (kapanana kadar bekler)
+2025-06-23 17:47:33,987 - src.simulation.interactive - INFO - exit             : Programdan çıkar
+2025-06-23 17:47:33,988 - src.simulation.interactive - INFO - help             : Bu yardım mesajını gösterir
+2025-06-23 17:47:38,656 - src.simulation.interactive - INFO - Simülasyon çalışmıyor
+2025-06-23 17:47:45,034 - src.simulation.interactive - INFO - Simülasyon başlatılıyor (1 adım)...
+2025-06-23 17:47:45,037 - src.simulation.home_simulator - INFO - ML modeli bulunamadı, eğitiliyor...
+2025-06-23 17:47:45,038 - src.simulation.home_simulator - INFO - Makine öğrenmesi modeli için 3 günlük veri üretiliyor
+2025-06-23 17:47:45,283 - src.models.model_manager - INFO - Tüm cihazlar için random_forest modelleri eğitiliyor...
+2025-06-23 17:47:45,362 - src.data_processing.preprocessing - INFO - Veriler C:\Users\ndr20\Desktop\b.tasarım\smart-home-automation\data\raw\training_data_20250623_1747.csv konumundan yükleniyor...
+2025-06-23 17:47:45,362 - src.data_processing.preprocessing - INFO - Veriler C:\Users\ndr20\Desktop\b.tasarım\smart-home-automation\data\raw\training_data_20250623_1747.csv konumundan yükleniyor...
+2025-06-23 17:47:45,377 - src.data_processing.preprocessing - INFO - Ham veri boyutu: (864, 47)
+2025-06-23 17:47:45,378 - src.data_processing.preprocessing - INFO - Veri temizleniyor...
+2025-06-23 17:47:45,391 - src.data_processing.preprocessing - INFO - Temizlenmiş veri boyutu: (864, 46)
+2025-06-23 17:47:45,403 - src.data_processing.preprocessing - INFO - Zaman özellikleri eklenmiş veri boyutu: (864, 51)
+2025-06-23 17:47:45,404 - src.data_processing.preprocessing - INFO - Özel özellikler çıkarılıyor...
+2025-06-23 17:47:45,461 - src.data_processing.preprocessing - INFO - Toplam 103 yeni özellik eklendi
+2025-06-23 17:47:45,462 - src.data_processing.preprocessing - INFO - Özel özellikler eklenmiş veri boyutu: (864, 154)
+2025-06-23 17:47:45,462 - src.data_processing.preprocessing - INFO - Hedef değişkenler hazırlanıyor...
+2025-06-23 17:47:45,463 - src.data_processing.preprocessing - INFO - Bulunan cihaz sütunları: ['Salon_Klima', 'Salon_Lamba', 'Salon_Perde', 'Yatak Odası_Klima', 'Yatak Odası_Lamba', 'Yatak Odası_Perde', 'Çocuk Odası_Klima', 'Çocuk Odası_Lamba', 'Çocuk Odası_Perde', 'Mutfak_Lamba', 'Mutfak_Havalandırma', 'Banyo_Lamba', 'Banyo_Havalandırma']
+2025-06-23 17:47:45,499 - src.data_processing.preprocessing - INFO - Hedefler eklendikten sonra veri boyutu: (864, 154)
+2025-06-23 17:47:45,500 - src.data_processing.preprocessing - INFO - Makine öğrenmesi veri seti oluşturuluyor...
+2025-06-23 17:47:45,506 - src.data_processing.preprocessing - INFO - Özellik matrisi boyutu: (864, 140)
+2025-06-23 17:47:45,507 - src.data_processing.preprocessing - INFO - Hedef değişken sayısı: 13
+2025-06-23 17:47:45,507 - src.data_processing.preprocessing - INFO - İlk birkaç satır örneği:
+2025-06-23 17:47:45,508 - src.data_processing.preprocessing - INFO -    Salon_Sıcaklık  Salon_Nem  ...  Aktif_Oda_Sayısı  Çalışan_Cihaz_Sayısı
+0       20.076044  64.496657  ...                 1                     0
+1       20.622963  65.002971  ...                 1                     1
+
+[2 rows x 140 columns]
+2025-06-23 17:47:45,644 - src.data_processing.preprocessing - INFO - Son özellik matrisi boyutu: (864, 140)
+2025-06-23 17:47:45,645 - src.data_processing.preprocessing - INFO - Veri 20.0% test, 80.0% eğitim olarak ayrılıyor...
+2025-06-23 17:47:45,646 - src.data_processing.preprocessing - INFO - Hedef 'Salon_Klima' benzersiz değerleri: [0 1], şekil: (864,)
+2025-06-23 17:47:45,652 - src.data_processing.preprocessing - INFO - Hedef 'Salon_Lamba' benzersiz değerleri: [0 1], şekil: (864,)
+2025-06-23 17:47:45,653 - src.data_processing.preprocessing - INFO - Hedef 'Salon_Perde' benzersiz değerleri: [0 1], şekil: (864,)
+2025-06-23 17:47:45,655 - src.data_processing.preprocessing - INFO - Hedef 'Yatak Odası_Klima' benzersiz değerleri: [0 1], şekil: (864,)
+2025-06-23 17:47:45,656 - src.data_processing.preprocessing - INFO - Hedef 'Yatak Odası_Lamba' benzersiz değerleri: [0 1], şekil: (864,)
+2025-06-23 17:47:45,658 - src.data_processing.preprocessing - INFO - Hedef 'Yatak Odası_Perde' benzersiz değerleri: [0 1], şekil: (864,)
+2025-06-23 17:47:45,659 - src.data_processing.preprocessing - INFO - Hedef 'Çocuk Odası_Klima' benzersiz değerleri: [0 1], şekil: (864,)
+2025-06-23 17:47:45,661 - src.data_processing.preprocessing - INFO - Hedef 'Çocuk Odası_Lamba' benzersiz değerleri: [0 1], şekil: (864,)
+2025-06-23 17:47:45,663 - src.data_processing.preprocessing - INFO - Hedef 'Çocuk Odası_Perde' benzersiz değerleri: [0 1], şekil: (864,)
+2025-06-23 17:47:45,667 - src.data_processing.preprocessing - INFO - Hedef 'Mutfak_Lamba' benzersiz değerleri: [0 1], şekil: (864,)
+2025-06-23 17:47:45,668 - src.data_processing.preprocessing - INFO - Hedef 'Mutfak_Havalandırma' benzersiz değerleri: [0 1], şekil: (864,)
+2025-06-23 17:47:45,670 - src.data_processing.preprocessing - INFO - Hedef 'Banyo_Lamba' benzersiz değerleri: [0 1], şekil: (864,)
+2025-06-23 17:47:45,671 - src.data_processing.preprocessing - INFO - Hedef 'Banyo_Havalandırma' benzersiz değerleri: [0 1], şekil: (864,)
+2025-06-23 17:47:45,941 - src.data_processing.preprocessing - INFO - İşlenmiş veriler C:\Users\ndr20\Desktop\b.tasarım\smart-home-automation\data\processed konumuna kaydedildi.
+2025-06-23 17:47:45,944 - src.models.model_trainer - INFO - Salon_Klima için model eğitiliyor...
+2025-06-23 17:47:45,945 - src.models.model_trainer - WARNING - Target column Salon_Klima found in features. Dropping it.
+2025-06-23 17:47:45,984 - src.data_processing.preprocessing - INFO - Özel özellikler çıkarılıyor...
+2025-06-23 17:47:46,036 - src.data_processing.preprocessing - INFO - Toplam 103 yeni özellik eklendi
+2025-06-23 17:47:46,039 - src.data_processing.preprocessing - INFO - Hedef değişkenler hazırlanıyor...
+2025-06-23 17:47:46,039 - src.data_processing.preprocessing - INFO - Bulunan cihaz sütunları: ['Salon_Lamba', 'Salon_Perde', 'Yatak Odası_Klima', 'Yatak Odası_Lamba', 'Yatak Odası_Perde', 'Çocuk Odası_Klima', 'Çocuk Odası_Lamba', 'Çocuk Odası_Perde', 'Mutfak_Lamba', 'Mutfak_Havalandırma', 'Banyo_Lamba', 'Banyo_Havalandırma']

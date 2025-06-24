@@ -19,6 +19,7 @@ import matplotlib
 import tempfile
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_agg import FigureCanvasAgg
+from matplotlib import font_manager as mpl_font_manager
 
 # Use Agg backend if running in a non-main thread
 if threading.current_thread() is not threading.main_thread():
@@ -27,7 +28,7 @@ if threading.current_thread() is not threading.main_thread():
 # Set custom fonts for emoji support
 try:
     # Try to use a font that supports emoji characters
-    font_paths = matplotlib.font_manager.findSystemFonts(fontpaths=None)
+    font_paths = mpl_font_manager.findSystemFonts(fontpaths=None)
     emoji_fonts = [f for f in font_paths if any(name in f.lower() for name in 
                   ['segoe ui emoji', 'symbola', 'noto', 'emoji', 'segoeui'])]
     
@@ -57,16 +58,22 @@ class SimulationVisualizer:
             display_mode (str): Görüntüleme modu ('inline', 'window', veya 'none')
         """
         self.figsize = figsize
+        allowed_styles = ['white', 'dark', 'whitegrid', 'darkgrid', 'ticks']
+        if style not in allowed_styles:
+            style = 'whitegrid'
         self.style = style
         self.palette = palette
         self.display_mode = display_mode
         self.data_history = []
         self.figure = None
         self.axes = None
-        self.logger = logging.getLogger("SimulationVisualizer")
+        self.logger = logging.getLogger(__name__)
         
         # Stil ayarları
-        sns.set_style(style)
+        if self.style in allowed_styles:
+            sns.set_style(self.style)  # type: ignore[arg-type]
+        else:
+            sns.set_style('whitegrid')  # type: ignore[arg-type]
         sns.set_palette(palette)
         plt.rcParams['figure.figsize'] = figsize
         
@@ -90,8 +97,9 @@ class SimulationVisualizer:
         
         # Ana figürü oluştur
         self.figure, self.axes = plt.subplots(2, 2, figsize=(14, 10))
-        self.figure.tight_layout(pad=4.0)
-        self.figure.suptitle('Akıllı Ev Simülasyonu', fontsize=16)
+        if self.figure is not None:
+            self.figure.tight_layout(pad=4.0)
+            self.figure.suptitle('Akıllı Ev Simülasyonu', fontsize=16)
         
         # Alt grafik başlıklarını belirle
         self.axes[0, 0].set_title('Oda Sıcaklıkları')
@@ -172,10 +180,10 @@ class SimulationVisualizer:
             self._visualize_sensor_values(self.axes[1, 1], data)
             
             # Simülasyon zamanı ve adımı ekle
-            self.figure.suptitle(f'Akıllı Ev Simülasyonu - Zaman: {simulation_time.strftime("%H:%M:%S")} - Adım: {step_count}', fontsize=16)
-            
-            # Layout'u düzenle
-            self.figure.tight_layout(rect=[0, 0.03, 1, 0.95])
+            if self.figure is not None:
+                self.figure.suptitle(f'Akıllı Ev Simülasyonu - Zaman: {simulation_time.strftime("%H:%M:%S")} - Adım: {step_count}', fontsize=16)
+                # Layout'u düzenle
+                self.figure.tight_layout(rect=(0, 0.03, 1, 0.95))
         
         except Exception as e:
             self.logger.error(f"Görselleştirme hatası: {e}")
@@ -411,7 +419,7 @@ class SimulationVisualizer:
             filename = f"sensors_over_time{room_str}_{timestamp}.png"
             filepath = os.path.join(self.output_dir, filename)
             plt.savefig(filepath, dpi=300, bbox_inches='tight')
-            print(f"Grafik kaydedildi: {filepath}")
+            self.logger.info(f"Grafik kaydedildi: {filepath}")
         
         # Ekranda göster
         if show:
@@ -504,7 +512,7 @@ class SimulationVisualizer:
             filename = f"room_occupancy{room_str}_{timestamp}.png"
             filepath = os.path.join(self.output_dir, filename)
             plt.savefig(filepath, dpi=300, bbox_inches='tight')
-            print(f"Grafik kaydedildi: {filepath}")
+            self.logger.info(f"Grafik kaydedildi: {filepath}")
         
         # Ekranda göster
         if show:
@@ -584,7 +592,7 @@ class SimulationVisualizer:
             filename = f"device_usage{room_str}{device_str}_{timestamp}.png"
             filepath = os.path.join(self.output_dir, filename)
             plt.savefig(filepath, dpi=300, bbox_inches='tight')
-            print(f"Grafik kaydedildi: {filepath}")
+            self.logger.info(f"Grafik kaydedildi: {filepath}")
         
         # Ekranda göster
         if show:
@@ -660,7 +668,7 @@ class SimulationVisualizer:
             filename = f"correlation_heatmap_{target_str}_{timestamp}.png"
             filepath = os.path.join(self.output_dir, filename)
             plt.savefig(filepath, dpi=300, bbox_inches='tight')
-            print(f"Grafik kaydedildi: {filepath}")
+            self.logger.info(f"Grafik kaydedildi: {filepath}")
         
         # Ekranda göster
         if show:
@@ -725,7 +733,7 @@ class SimulationVisualizer:
             filename = f"model_performance_{model_name_clean}_{timestamp}.png"
             filepath = os.path.join(self.output_dir, filename)
             plt.savefig(filepath, dpi=300, bbox_inches='tight')
-            print(f"Grafik kaydedildi: {filepath}")
+            self.logger.info(f"Grafik kaydedildi: {filepath}")
         
         # Ekranda göster
         if show:
@@ -867,7 +875,7 @@ class SimulationVisualizer:
                     plt.savefig(filepath, dpi=300, bbox_inches='tight')
                 else:
                     fig.savefig(filepath, dpi=300, bbox_inches='tight')
-                print(f"Grafik kaydedildi: {filepath}")
+                self.logger.info(f"Grafik kaydedildi: {filepath}")
             
             # Handle different thread scenarios for visualization
             if show:
@@ -878,7 +886,7 @@ class SimulationVisualizer:
                     with tempfile.NamedTemporaryFile(suffix='.png', delete=False) as tmp:
                         temp_filename = tmp.name
                         fig.savefig(temp_filename, dpi=300, bbox_inches='tight')
-                        print(f"Görselleştirme {temp_filename} konumuna kaydedildi. "
+                        self.logger.info(f"Görselleştirme {temp_filename} konumuna kaydedildi. "
                               f"Bu dosyayı inceledikten sonra enter tuşuna basarak devam edin.")
                         input("Devam etmek için enter tuşuna basın...")
             
@@ -892,7 +900,7 @@ class SimulationVisualizer:
                 error_path = os.path.join(self.output_dir, f"visualization_error_{timestamp}.txt")
                 with open(error_path, 'w') as f:
                     f.write(f"Error: {str(e)}")
-                print(f"Hata bilgisi {error_path} konumuna kaydedildi.")
+                self.logger.info(f"Hata bilgisi {error_path} konumuna kaydedildi.")
             return None
 
     def save_visualization(self, output_path=None):

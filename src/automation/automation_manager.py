@@ -22,8 +22,7 @@ class AutomationManager:
         Args:
             ml_model: Opsiyonel makine öğrenmesi modeli
         """
-        # Loglama
-        self.setup_logging()
+        self.logger = logging.getLogger(__name__)
         self.logger.info("AutomationManager başlatılıyor...")
         
         # Cihaz yöneticisi
@@ -50,35 +49,6 @@ class AutomationManager:
         
         self.logger.info("AutomationManager başlatıldı")
     
-    def setup_logging(self):
-        """
-        Loglama sistemini yapılandırır
-        """
-        log_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "logs")
-        
-        # Dizin yoksa oluştur
-        if not os.path.exists(log_dir):
-            os.makedirs(log_dir)
-        
-        # Log dosyası adı
-        log_file = os.path.join(log_dir, f"automation_manager_{datetime.now().strftime('%Y%m%d')}.log")
-        
-        # Logger oluştur
-        self.logger = logging.getLogger("AutomationManager")
-        
-        # Eğer handler yoksa ekle
-        if not self.logger.handlers:
-            file_handler = logging.FileHandler(log_file)
-            console_handler = logging.StreamHandler()
-            
-            formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-            file_handler.setFormatter(formatter)
-            console_handler.setFormatter(formatter)
-            
-            self.logger.addHandler(file_handler)
-            self.logger.addHandler(console_handler)
-            self.logger.setLevel(logging.INFO)
-    
     def process_sensor_data(self, sensor_data):
         """
         Sensör verilerini işler ve gerekli otomasyon kurallarını uygular
@@ -102,7 +72,7 @@ class AutomationManager:
         
         # Cihaz durumlarını güncelle
         if updated_devices:
-            self.device_manager.update_device_states(updated_devices, source="automation")
+            self.device_manager.update_device_states(updated_devices, trigger="automation")
             self.logger.info(f"Cihaz durumları güncellendi: {updated_devices}")
         
         return updated_devices
@@ -156,7 +126,7 @@ class AutomationManager:
             updates[f"{room}_Perde"] = True
         
         # Cihaz durumlarını güncelle
-        self.device_manager.update_device_states(updates, source="scheduled_routine")
+        self.device_manager.update_device_states(updates, trigger="scheduled_routine")
         
         # Bir sonraki gün için yeniden planla
         next_run = datetime.now() + timedelta(days=1)
@@ -176,7 +146,7 @@ class AutomationManager:
             updates[f"{room}_Perde"] = False
         
         # Cihaz durumlarını güncelle
-        self.device_manager.update_device_states(updates, source="scheduled_routine")
+        self.device_manager.update_device_states(updates, trigger="scheduled_routine")
         
         # Bir sonraki gün için yeniden planla
         next_run = datetime.now() + timedelta(days=1)
@@ -192,7 +162,7 @@ class AutomationManager:
             updates[f"{room}_Lamba"] = False
         
         # Cihaz durumlarını güncelle
-        self.device_manager.update_device_states(updates, source="scheduled_routine")
+        self.device_manager.update_device_states(updates, trigger="scheduled_routine")
         
         # Bir sonraki gün için yeniden planla
         next_run = datetime.now() + timedelta(days=1)
@@ -210,8 +180,9 @@ class AutomationManager:
         Returns:
             bool: İşlem başarılıysa True
         """
-        result = self.device_manager.set_device_state(room, device, state, source="manual")
-        self.logger.info(f"Manuel kontrol: {room}_{device} -> {state} (Başarı: {result})")
+        device_id = f"{room}_{device}"
+        result = self.device_manager.set_device_state(device_id, state, trigger="manual")
+        self.logger.info(f"Manuel kontrol: {device_id} -> {state} (Başarı: {result})")
         return result
     
     def start_automation(self):

@@ -7,6 +7,7 @@ import seaborn as sns
 import joblib
 import json
 import warnings
+import logging
 
 from src.models.model_trainer import DeviceControlModel
 from src.data_processing.preprocessing import process_raw_data
@@ -23,27 +24,31 @@ class SmartHomeModelManager:
         self.preprocessor = None
         self.performance_summary = {}
         self.performance_data = []  # Initialize performance_data as an empty list
+        self.logger = logging.getLogger(__name__)
     
     def train_models_for_all_devices(self, csv_path, model_type='random_forest', optimize=False):
         """Tüm cihazlar için ML modelleri eğitiyor"""
-        print(f"Tüm cihazlar için {model_type} modelleri eğitiliyor...")
-        
-        # Veriyi işle
-        X_train, X_test, y_train_dict, y_test_dict, preprocessor = process_raw_data(
+        self.logger.info(f"Tüm cihazlar için {model_type} modelleri eğitiliyor...")
+        # Load the raw DataFrame
+        df_raw = pd.read_csv(csv_path)
+        # Get train/test splits and targets from process_raw_data
+        df_train, df_test, y_train_dict, y_test_dict, preprocessor = process_raw_data(
             csv_path, save_processed=True
         )
-        
         self.preprocessor = preprocessor
-        
+        # Get the indices of the train/test splits
+        train_indices = df_train.index
+        test_indices = df_test.index
+        # Use these indices to select from the raw DataFrame
+        X_train_raw = df_raw.loc[train_indices]
+        X_test_raw = df_raw.loc[test_indices]
         # Modelleri eğit ve değerlendir
         for device_name, y_train in y_train_dict.items():
             model = DeviceControlModel(device_name, model_type)
-            model.preprocessor = preprocessor
-            model.train(X_train, y_train_dict[device_name], optimize=optimize)
-            
-            # Model değerlendirmesi
-            metrics = model.evaluate(X_test, y_test_dict[device_name])
-            
+            # Do NOT pass preprocessor=preprocessor; let the model fit its own on the raw train split
+            print("DEBUG: Columns passed to train:", X_train_raw.columns.tolist())
+            model.train(X_train_raw, y_train, optimize=optimize)
+            metrics = model.evaluate(X_test_raw, y_test_dict[device_name])
             # Değerlendirme başarısız olsa bile devam et
             # metrics sözlüğünde 'accuracy' anahtarı varsa kullan
             if metrics and 'accuracy' in metrics:
@@ -74,116 +79,52 @@ class SmartHomeModelManager:
                     'error': metrics.get('error', 'Unknown error'),
                     'timestamp': datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                 }
-                self.performance_data.append(performance_data)
-            
-            # Modeli kaydet
+                self.performance_data.append(performance_data)            # Modeli kaydet
             try:
                 model.save_model()
             except Exception as e:
-                print(f"Model kaydetme hatası: {e}")
-            
+                self.logger.error(f"Model kaydetme hatası: {e}")
             # Add model to self.models before deleting the local variable
             self.models[device_name] = model
     
-    def predict_device_states(self, features_df):
-        """
-        Verilen özelliklere göre tüm cihazların durumlarını tahmin eder
-        
-        Args:
-            features_df (pandas.DataFrame): Özellik değerleri
-            
-        Returns:
-            dict: Cihaz adı -> tahmin edilen durum
-        """
-        if not self.models:
-            raise ValueError("Henüz hiçbir model eğitilmemiş")
-        
+    def predict_device_states(self, X):
+        """Predict device states using the pipeline for all models."""
         predictions = {}
-        
         for device_name, model in self.models.items():
             try:
-                # First try to match the expected feature names
-                model_features = None
-                
-                # Get expected feature names from the model
-                if hasattr(model.model, 'feature_names_in_'):
-                    model_features = model.model.feature_names_in_
-                
-                # If we have model features, try to align the input
-                if model_features is not None and len(model_features) > 0:
-                    # Create aligned input with zeros for missing features
-                    aligned_input = pd.DataFrame(index=features_df.index)
-                    
-                    # For each expected feature
-                    for feature in model_features:
-                        if feature in features_df.columns:
-                            aligned_input[feature] = features_df[feature]
-                        else:
-                            # Print information about missing features to help debug
-                            print(f"Feature '{feature}' not found in input, using default value 0")
-                            aligned_input[feature] = 0
-                    
-                    # Check if we've accounted for all expected features
-                    missing_features = set(model_features) - set(aligned_input.columns)
-                    if missing_features:
-                        print(f"Warning: Still missing features after alignment: {missing_features}")
-                    
-                    # Use the aligned input
-                    pred = model.predict(aligned_input)
-                    pred_proba = model.predict_proba(aligned_input)
-                    
-                    print(f"Successfully used aligned features for {device_name}")
+                pred = model.predict(X)
+                # Handle both 1D and 2D prediction arrays
+                if hasattr(pred, 'shape') and len(pred.shape) > 0:
+                    prediction_value = pred[0] if pred.shape[0] > 0 else False
                 else:
-                    # Fallback - try using numpy array to bypass feature name checks
-                    print(f"No feature names found for {device_name}, attempting direct prediction")
+                    prediction_value = pred
+                
+                # Get prediction probabilities
+                if hasattr(model, 'predict_proba'):
+                    proba = model.predict_proba(X)
+                    # Handle probability array shape
+                    if hasattr(proba, 'shape') and len(proba.shape) == 2:
+                        prob = proba[0, 1] if proba.shape[1] > 1 else proba[0, 0]
+                    elif hasattr(proba, 'shape') and len(proba.shape) == 1:
+                        prob = proba[0] if proba.shape[0] > 0 else 0.0
+                    else:
+                        prob = float(proba) if proba is not None else 0.0
+                else:
+                    prob = 1.0 if prediction_value else 0.0
                     
-                    # Convert to numpy array to bypass feature name checking
-                    X_values = features_df.values
-                    pred = model.model.predict(X_values)
-                    pred_proba = model.model.predict_proba(X_values)
-                
-                # Get the first row predictions
-                prediction = pred[0]
-                probability = np.max(pred_proba[0])
-                
                 predictions[device_name] = {
-                    'state': bool(prediction),
-                    'probability': float(probability),
-                    'source': 'aligned_features'
+                    'state': bool(prediction_value),
+                    'probability': float(prob),
+                    'source': 'pipeline'
                 }
-                
-                print(f"Successfully predicted {device_name}")
-                
             except Exception as e:
-                print(f"{device_name} için tahmin yapılırken hata oluştu: {e}")
-                
-                # Try direct approach with model.model as a last resort
-                try:
-                    if hasattr(model, 'model'):
-                        raw_model = model.model
-                        if hasattr(raw_model, 'predict'):
-                            # Get raw predictions - use numpy array to bypass feature checks
-                            raw_pred = raw_model.predict(features_df.values)
-                            
-                            # Set prediction using raw result
-                            state = bool(raw_pred[0])
-                            predictions[device_name] = {
-                                'state': state,
-                                'probability': 1.0 if state else 0.0,
-                                'method': 'raw_predict'
-                            }
-                            print(f"Successfully predicted {device_name} using raw model")
-                            continue
-                except Exception as inner_error:
-                    print(f"Raw prediction failed for {device_name}: {inner_error}")
-                
-                # Default fallback
+                self.logger.error(f"Error predicting for {device_name}: {str(e)}")
                 predictions[device_name] = {
                     'state': False,
                     'probability': 0.0,
-                    'error': str(e)
+                    'error': str(e),
+                    'source': 'default'
                 }
-        
         return predictions
     
     def save_manager(self, directory=None):
@@ -231,7 +172,7 @@ class SmartHomeModelManager:
         with open(manager_path, 'w') as f:
             json.dump(manager_info, f, indent=4)
         
-        print(f"Model yöneticisi {manager_path} konumuna kaydedildi")
+        self.logger.info(f"Model yöneticisi {manager_path} konumuna kaydedildi")
         
         return manager_path
     
@@ -263,9 +204,9 @@ class SmartHomeModelManager:
                 model = DeviceControlModel.load_model(model_path)
                 manager.models[device_name] = model
             else:
-                print(f"Uyarı: {model_path} konumunda model bulunamadı, {device_name} için model yüklenemedi.")
+                manager.logger.warning(f"Uyarı: {model_path} konumunda model bulunamadı, {device_name} için model yüklenemedi.")
         
-        print(f"{manager_path} konumundan model yöneticisi yüklendi - {len(manager.models)} model içeriyor")
+        manager.logger.info(f"{manager_path} konumundan model yöneticisi yüklendi - {len(manager.models)} model içeriyor")
         
         return manager
     
@@ -384,157 +325,9 @@ class SmartHomeModelManager:
         with open(report_path, 'w', encoding='utf-8') as f:
             f.write('\n'.join(report))
         
-        print(f"Performans raporu {report_path} konumuna kaydedildi")
+        self.logger.info(f"Performans raporu {report_path} konumuna kaydedildi")
         
         return report_path
-
-    def predict_with_feature_bypass(self, X):
-        """
-        Make predictions while bypassing feature name checks
-        
-        Args:
-            X (pandas.DataFrame): Input features
-        
-        Returns:
-            dict: Predictions for each device
-        """
-        predictions = {}
-        
-        # Handle timestamp columns before conversion to numpy array
-        if isinstance(X, pd.DataFrame):
-            # Convert timestamp columns to numeric features
-            for col in X.columns:
-                if pd.api.types.is_datetime64_dtype(X[col]) or isinstance(X[col].iloc[0], pd.Timestamp):
-                    # Extract useful numeric features from timestamp
-                    X[f"{col}_hour"] = X[col].dt.hour
-                    X[f"{col}_dayofweek"] = X[col].dt.dayofweek
-                    X[f"{col}_day"] = X[col].dt.day
-                    X[f"{col}_month"] = X[col].dt.month
-                    # Drop original timestamp column
-                    X = X.drop(columns=[col])
-        
-        # Ensure all data is numeric
-        if isinstance(X, pd.DataFrame):
-            for col in X.columns:
-                if not pd.api.types.is_numeric_dtype(X[col]):
-                    try:
-                        X[col] = pd.to_numeric(X[col], errors='coerce')
-                    except:
-                        # If conversion fails, replace with zeros
-                        X[col] = 0
-            
-            # Convert to numpy array after cleaning
-            X_values = X.values
-        else:
-            X_values = X
-            
-        # Predict for each device model
-        for device_name, model in self.models.items():
-            try:
-                # We need to handle the feature count mismatch more directly
-                if hasattr(model.model, 'n_features_in_'):
-                    expected_feature_count = model.model.n_features_in_
-                    
-                    # Create a correctly sized input array
-                    if X_values.shape[1] != expected_feature_count:
-                        # Generate dummy data with the correct shape
-                        dummy_data = np.zeros((1, expected_feature_count))
-                        
-                        # Copy available features into the dummy data
-                        features_to_use = min(X_values.shape[1], expected_feature_count)
-                        try:
-                            dummy_data[0, :features_to_use] = X_values[0, :features_to_use]
-                        except (ValueError, TypeError) as e:
-                            # Handle any type conversion errors
-                            print(f"Error copying features for {device_name}: {e}")
-                            # Use zeros as a fallback
-                        
-                        # Make prediction with properly sized data
-                        try:
-                            with warnings.catch_warnings():
-                                warnings.filterwarnings("ignore", category=UserWarning)
-                                
-                                if hasattr(model.model, 'predict_proba'):
-                                    proba = model.model.predict_proba(dummy_data)
-                                    if proba.shape[1] > 1:  # Binary classification
-                                        prob = proba[0, 1]  # Probability of class 1
-                                    else:
-                                        prob = proba[0, 0]
-                                    
-                                    state = bool(prob > 0.5)
-                                    predictions[device_name] = {
-                                        'state': state,
-                                        'probability': float(prob),
-                                        'source': 'feature_padded'
-                                    }
-                                else:
-                                    pred = model.model.predict(dummy_data)[0]
-                                    predictions[device_name] = {
-                                        'state': bool(pred),
-                                        'probability': 1.0 if pred else 0.0,
-                                        'source': 'feature_padded'
-                                    }
-                        except Exception as predict_err:
-                            print(f"Error predicting with padded features for {device_name}: {predict_err}")
-                            predictions[device_name] = {
-                                'state': False,
-                                'probability': 0.0,
-                                'error': str(predict_err),
-                                'source': 'default'
-                            }
-                    else:
-                        # Input already has the right feature count
-                        if hasattr(model.model, 'predict_proba'):
-                            proba = model.model.predict_proba(X_values)
-                            if proba.shape[1] > 1:
-                                prob = proba[0, 1]
-                            else:
-                                prob = proba[0, 0]
-                        
-                            state = bool(prob > 0.5)
-                            predictions[device_name] = {
-                                'state': state,
-                                'probability': float(prob),
-                                'source': 'direct'
-                            }
-                        else:
-                            pred = model.model.predict(X_values)[0]
-                            predictions[device_name] = {
-                                'state': bool(pred),
-                                'probability': 1.0 if pred else 0.0,
-                                'source': 'direct'
-                            }
-                else:
-                    # Model doesn't have n_features_in_ attribute
-                    # Make a direct prediction and hope for the best
-                    if hasattr(model.model, 'predict_proba'):
-                        proba = model.model.predict_proba(X_values)
-                        prob = proba[0, 1] if proba.shape[1] > 1 else proba[0, 0]
-                        state = bool(prob > 0.5)
-                        predictions[device_name] = {
-                            'state': state,
-                            'probability': float(prob),
-                            'source': 'direct'
-                        }
-                    else:
-                        pred = model.model.predict(X_values)[0]
-                        predictions[device_name] = {
-                            'state': bool(pred),
-                            'probability': 1.0 if pred else 0.0,
-                            'source': 'direct'
-                        }
-                
-            except Exception as e:
-                # Log error and provide default prediction
-                print(f"Error predicting for {device_name}: {str(e)}")
-                predictions[device_name] = {
-                    'state': False,
-                    'probability': 0.0,
-                    'error': str(e),
-                    'source': 'default'
-                }
-                
-        return predictions
 
     def get_expected_feature_names(self):
         """
@@ -544,7 +337,7 @@ class SmartHomeModelManager:
             list: List of feature names or None if not available
         """
         if not self.models:
-            print("No models available to extract feature names")
+            self.logger.warning("No models available to extract feature names")
             return None
         
         # Try to get feature names from any model
@@ -570,7 +363,7 @@ class SmartHomeModelManager:
                 if hasattr(model.preprocessor, 'feature_names_'):
                     return model.preprocessor.feature_names_
         
-        print("Could not extract feature names from any model")
+        self.logger.warning("Could not extract feature names from any model")
         return None
 
 # Modelleri test etmek ve performans raporu oluşturmak için fonksiyon
