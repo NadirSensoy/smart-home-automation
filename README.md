@@ -296,6 +296,38 @@ Bu bölüm, projenin **akademik aspect**'lerini detaylandıran dokümantasyon li
 | **Grafik açılmıyor** | Backend sorunu | `matplotlib.use('Agg')` ekle |
 | **CSV boş/hatalı** | Yazma izni sorunu | Klasör izinlerini kontrol et |
 
+### 📝 Log Dosyaları
+- `logs/AkilliEvOtomasyonu_*.log` - Detaylı sistem logları
+- Hata mesajları ve performans bilgileri
+- Sorun giderme için ana kaynak
+
+## 🤝 Katkıda Bulunma
+
+### 🔄 Geliştirme Alanları
+- **Yeni sensör türleri** ekleme
+- **Farklı ML algoritmaları** test etme  
+- **Mobil/web arayüz** geliştirme
+- **Gerçek IoT cihaz** entegrasyonu
+- **Çoklu ev desteği** ekleme
+
+### 📋 Katkı Süreci
+1. **Fork** yapın
+2. **Feature branch** oluşturun (`git checkout -b feature/YeniOzellik`)
+3. **Commit** yapın (`git commit -m 'Yeni özellik eklendi'`)
+4. **Push** yapın (`git push origin feature/YeniOzellik`)
+5. **Pull Request** açın
+
+## 📞 İletişim ve Destek
+
+- 🐛 **Hata Bildirimi**: [GitHub Issues](https://github.com/NadirSensoy/smart-home-automation/issues)
+- 💬 **Tartışma**: [GitHub Discussions](https://github.com/NadirSensoy/smart-home-automation/discussions)
+- 📚 **Wiki**: [Proje Wiki](https://github.com/NadirSensoy/smart-home-automation/wiki)
+
+
+**🏠 Geleceğin akıllı evini bugün deneyimleyin!** ✨
+
+*%35 enerji tasarrufu • %96.99 ML doğruluğu • <100ms yanıt süresi*
+
 ### 📊 Performans Optimizasyonu (Akademik)
 ```bash
 # Hızlı test (sunum için)
