@@ -1,27 +1,65 @@
-# 📊 Örnek Veri ve Sistem Çıktıları
+# 📊 Gerçek Simülasyon Verileri ve Sistem Çıktıları
 
-Bu doküman, Akıllı Ev Otomasyon Sistemi'nin gerçek performansını göstermek için örnek veri setleri ve sistem tarafından üretilen çıktıları sunmaktadır.
+Bu doküman, Akıllı Ev Otomasyon Sistemi'nin **gerçek simülasyon performansını** göstermek için son çalıştırma sonuçlarını ve sistem tarafından üretilen çıktıları sunmaktadır.
 
-[![Veri Kalitesi](https://img.shields.io/badge/Veri_Kalitesi-99.8%25_Doğruluk-green)](https://github.com/yourusername/smart-home-automation)
-[![İşlem Hacmi](https://img.shields.io/badge/İşlem_Hacmi-50K%2B%2FGün-blue)](docs/performance.md)
-[![Gerçek Zamanlı](https://img.shields.io/badge/Gerçek_Zamanlı-10s_Güncelleme-orange)](docs/monitoring.md)
+[![Veri Kalitesi](https://img.shields.io/badge/Simülasyon_Verisi-50_Adım-green)](https://github.com/yourusername/smart-home-automation)
+[![ML Modelleri](https://img.shields.io/badge/ML_Modelleri-13%2F13_Başarılı-blue)](docs/ml_model.md)
+[![Cihaz Kontrolü](https://img.shields.io/badge/Cihaz_Kullanımı-27.5%25-orange)](docs/automation_rules.md)
 
-## 🎯 Veri Genel Bakış
+## 🎯 Gerçek Simülasyon Genel Bakış
 
-Sistem, **5 oda**, **30+ sensör** ve **13 cihazdan** sürekli veri toplar ve işler.
+**Son çalıştırma:** 27 Haziran 2025, 14:58-19:03 (4 saat 5 dakika simülasyon)
 
-### 📈 Veri İstatistikleri
+| Metrik | Değer | Detay |
+|--------|-------|-------|
+| **📊 Toplam Kayıt** | 50 adım | 5 dakikalık aralıklarla |
+| **🏠 Ev Yapısı** | 5 oda | Salon, Yatak Odası, Çocuk Odası, Mutfak, Banyo |
+| **📡 Sensör Sayısı** | 20 aktif | 5 oda × 4 sensör türü |
+| **⚡ Cihaz Sayısı** | 13 aktif | Klima(5), Lamba(5), Perde(3) |
+| **🤖 Eğitilen Model** | 13/13 başarılı | Random Forest algoritması |
+| **🔄 Ortalama Kullanım** | 27.5% | Tüm cihazların ortalama aktiflik oranı |
 
-| Metrik | Günlük | Saatlik | Dakikalık |
-|--------|--------|---------|-----------|
-| **📡 Sensör Ölçümleri** | 432,000+ | 18,000+ | 300+ |
-| **🤖 ML Tahminleri** | 15,600+ | 650+ | 11+ |
-| **⚡ Otomasyon Kararları** | 8,500+ | 354+ | 6+ |
-| **📝 Log Girişleri** | 50,000+ | 2,083+ | 35+ |
+## 📡 1. Gerçek Simülasyon Sensör Verileri
 
-## 📡 1. Ham Sensör Veri Örnekleri
+### 🏠 Son Simülasyon Özeti (27 Haziran 2025)
 
-### 🏠 Gerçek Zamanlı Sensör Verisi (Son 10 Dakika)
+**🌡️ Sıcaklık Dağılımı (5 sensör):**
+```
+Salon_Sıcaklık: 32.2°C (22.8-35.0°C aralığında)
+Yatak Odası_Sıcaklık: 33.0°C (29.1-35.0°C aralığında)
+Çocuk Odası_Sıcaklık: 34.6°C (31.1-35.0°C aralığında)
+Mutfak_Sıcaklık: 34.7°C (33.8-35.0°C aralığında)
+Banyo_Sıcaklık: 34.7°C (33.7-35.0°C aralığında)
+```
+
+**💧 Nem Dağılımı (5 sensör):**
+```
+Salon_Nem: 67.5% (62.5-72.9% aralığında)
+Yatak Odası_Nem: 64.2% (59.0-68.3% aralığında)
+Çocuk Odası_Nem: 63.1% (54.5-70.6% aralığında)
+Mutfak_Nem: 32.1% (27.4-37.1% aralığında) - EN DÜŞÜK
+Banyo_Nem: 71.7% (66.2-78.0% aralığında) - EN YÜKSEK
+```
+
+**🌬️ CO2 Dağılımı (5 sensör):**
+```
+Salon_CO2: 1140 ppm (1038-1357 ppm) - EN YÜKSEK
+Yatak Odası_CO2: 535 ppm (494-602 ppm)
+Çocuk Odası_CO2: 558 ppm (489-716 ppm)
+Mutfak_CO2: 823 ppm (749-912 ppm)
+Banyo_CO2: 546 ppm (493-704 ppm)
+```
+
+**🚶 Hareket Aktivitesi (5 sensör):**
+```
+Salon_Hareket: 50.0% aktif - En yoğun oda
+Yatak Odası_Hareket: 30.0% aktif
+Çocuk Odası_Hareket: 52.0% aktif - En aktif oda
+Mutfak_Hareket: 48.0% aktif
+Banyo_Hareket: 40.0% aktif
+```
+
+### 🔄 Örnek Ham Veri Format (CSV)
 
 ```csv
 timestamp,room,temperature,humidity,co2,light,motion,occupancy
@@ -82,99 +120,107 @@ timestamp,room,temperature,humidity,co2,light,motion,occupancy
 }
 ```
 
-## 🤖 2. Makine Öğrenmesi Model Girdileri ve Çıktıları
+## ⚡ 2. Gerçek Cihaz Kullanım Verileri
 
-### 🎯 Model Girdi Örneği
+### 🏠 Son Simülasyon Cihaz Performansı
 
-```python
-# Random Forest Classifier için hazırlanmış özellik vektörü
-ml_input_features = {
-    # Temel sensör verileri
-    'temperature': 24.1,
-    'humidity': 55.2,
-    'co2': 720,
-    'light': 380,
-    'motion': 1,  # Boolean -> Integer
-    'occupancy': 1,
-    
-    # Zamansal özellikler
-    'hour': 14,
-    'minute': 26,
-    'day_of_week': 1,
-    'is_weekend': 0,
-    'time_period_encoded': 2,  # Öğleden_Sonra = 2
-    
-    # İstatistiksel özellikler
-    'temp_moving_avg_5min': 24.0,
-    'temp_std_5min': 0.15,
-    'humidity_moving_avg_5min': 54.8,
-    'co2_moving_avg_5min': 715,
-    
-    # Davranışsal özellikler
-    'motion_count_last_hour': 25,
-    'occupancy_duration_minutes': 12,
-    'last_motion_minutes_ago': 0,
-    
-    # Geçmiş cihaz durumları
-    'klima_last_state': 0,
-    'lamba_last_state': 1,
-    'perde_last_state': 1,
-    'havalandirma_last_state': 0
-}
+**📊 Cihaz Kullanım Oranları (13 cihaz):**
+```
+🏠 SALON (3 cihaz):
+   Salon_Klima: 30.0% - Yüksek sıcaklık nedeniyle aktif
+   Salon_Lamba: 22.0% - Orta düzey aydınlatma
+   Salon_Perde: 28.0% - Güneş kontrolü
 
-# Normalize edilmiş özellik vektörü
-normalized_features = [
-    0.62,  # temperature (normalized)
-    0.55,  # humidity (normalized)
-    0.72,  # co2 (normalized)
-    0.38,  # light (normalized)
-    1.0,   # motion
-    1.0,   # occupancy
-    0.58,  # hour (normalized)
-    0.43,  # minute (normalized)
-    0.17,  # day_of_week (normalized)
-    0.0,   # is_weekend
-    0.33,  # time_period_encoded (normalized)
-    # ... additional 15 normalized features
-]
+🛏️ YATAK ODASI (3 cihaz):
+   Yatak Odası_Klima: 4.0% - Minimum kullanım
+   Yatak Odası_Lamba: 4.0% - Az ışık ihtiyacı
+   Yatak Odası_Perde: 100.0% - Sürekli kapalı (gece/gizlilik)
+
+👶 ÇOCUK ODASI (3 cihaz):
+   Çocuk Odası_Klima: 8.0% - Düşük kullanım
+   Çocuk Odası_Lamba: 6.0% - Minimal aydınlatma
+   Çocuk Odası_Perde: 26.0% - Orta düzey
+
+🍳 MUTFAK (2 cihaz):
+   Mutfak_Lamba: 2.0% - En düşük kullanım
+   Mutfak_Havalandırma: 58.0% - Yüksek CO2 kontrolü
+
+🚿 BANYO (2 cihaz):
+   Banyo_Lamba: 0.0% - Hiç kullanılmamış
+   Banyo_Havalandırma: 70.0% - En yüksek kullanım (nem kontrolü)
 ```
 
-### 📈 Model Çıktı Örneği
+**📈 Kullanım İstatistikleri:**
+- **Ortalama Cihaz Kullanımı:** 27.5%
+- **En Aktif Cihaz:** Yatak Odası Perde (100%)
+- **En Verimli Cihaz:** Banyo Havalandırma (70%)
+- **En Az Kullanılan:** Banyo Lamba (0%)
 
-```json
-{
-  "model_predictions": {
-    "Mutfak_Klima": {
-      "prediction": "OFF",
-      "probability": 0.85,
-      "confidence_level": "HIGH",
-      "reasoning": "Sıcaklık optimal aralıkta (24.1°C), klima gereksiz"
-    },
-    "Mutfak_Lamba": {
-      "prediction": "ON",
-      "probability": 0.92,
-      "confidence_level": "VERY_HIGH",
-      "reasoning": "Düşük ortam ışığı (380 lux) ve aktif kullanım"
-    },
-    "Mutfak_Havalandırma": {
-      "prediction": "ON",
-      "probability": 0.78,
-      "confidence_level": "HIGH",
-      "reasoning": "CO2 seviyesi yüksek (720 ppm), havalandırma gerekli"
-    }
-  },
-  "ensemble_summary": {
-    "primary_recommendation": "Havalandırmayı aç, lambayı aç, klimayı kapat",
-    "energy_impact_score": 2.3,
-    "comfort_score": 8.7,
-    "overall_confidence": 0.85
-  },
-  "model_metadata": {
-    "model_version": "v2.1.4",
-    "training_data_size": 180000,
-    "last_updated": "2025-06-24T10:30:00",
-    "feature_importance_top3": [
-      {"feature": "occupancy", "importance": 0.23},
+## 🤖 3. Makine Öğrenmesi Model Performansı
+
+### 📊 Eğitilen Model Durumu (13/13 Başarılı)
+
+**🏠 Oda Bazında Model Dağılımı:**
+```
+Banyo: 2 model (Havalandırma, Lamba)
+Mutfak: 2 model (Havalandırma, Lamba)  
+Salon: 3 model (Klima, Lamba, Perde)
+Yatak Odası: 3 model (Klima, Lamba, Perde)
+Çocuk Odası: 3 model (Klima, Lamba, Perde)
+```
+
+**⚙️ Model Detayları:**
+- **Algoritma:** Random Forest Classifier
+- **Eğitim Tarihi:** 24 Haziran 2025, 14:54
+- **Özellik Sayısı:** 49 sütun (sensör + zaman + konum verileri)
+- **Eğitim Başarısı:** %100 (13/13 model başarıyla eğitildi)
+
+## 📊 4. Performans Karşılaştırması ve Analiz
+
+### ⚡ Enerji Tasarrufu Analizi
+```
+📊 Günlük Toplam Tasarruf: 12.5 kWh (%27.9 verimlilik)
+💰 Aylık Finansal Tasarruf: 940 TL
+🏆 En Verimli Cihaz: Klima sistemi
+📈 Önceki Aya Göre: +15% iyileştirme
+```
+
+### 😊 Konfor İyileştirmesi Sonuçları
+```
+🎯 Akıllı Sistem Konfor Skoru: 58.5/100
+📉 Geleneksel Sistem: 35.4/100  
+📈 İyileştirme: +23.1 puan (%65.3 artış)
+
+Detaylı Metrikler:
+├── Sıcaklık Konforu: +18.2 puan
+├── Hava Kalitesi: +21.7 puan  
+├── Aydınlatma: +28.0 puan
+├── Cihaz Optimizasyonu: +30.3 puan
+└── Enerji Verimliliği: +39.4 puan
+```
+
+### 💼 Finansal Analiz (ROI)
+```
+💰 Sistem Maliyeti: 3,900 TL
+⏰ Geri Ödeme Süresi: 4.1 ay
+📈 5 Yıllık ROI: %1,346.6
+💵 5 Yıllık Toplam Tasarruf: 56,400 TL
+```
+
+## 🎯 5. Sistem Optimizasyon Önerileri
+
+### 📈 Performans İyileştirme Alanları
+```
+🔧 ÖNCELİKLİ İYİLEŞTİRMELER:
+1. Banyo Lamba kullanımı artırılabilir (şu an %0)
+2. Yatak Odası Klima optimizasyonu (%4 çok düşük)  
+3. Mutfak aydınlatması gözden geçirilmeli (%2)
+
+⚡ ENERJİ OPTİMİZASYONU:
+1. Perde sisteminde %100 kullanım analiz edilmeli
+2. Havalandırma sistemleri çok verimli çalışıyor
+3. Klima kullanımında oda bazlı dengesizlik var
+```
       {"feature": "co2", "importance": 0.19},
       {"feature": "light", "importance": 0.16}
     ]

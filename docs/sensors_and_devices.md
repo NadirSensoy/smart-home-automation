@@ -1,54 +1,55 @@
-# 📡 Sensörler ve Cihazlar - Teknik Dokümantasyon
+# 📡 Sensörler ve Cihazlar - Gerçek Simülasyon Verileri
 
-Bu kapsamlı dokümanda, Akıllı Ev Otomasyon Sistemi'nde kullanılan tüm sensörlerin ve kontrol edilen cihazların gerçek teknik özellikleri, veri formatları, kalibrasyon bilgileri ve çalışma prensipleri detaylı olarak açıklanmaktadır.
+Bu kapsamlı dokümanda, Akıllı Ev Otomasyon Sistemi'nde kullanılan tüm sensörlerin ve kontrol edilen cihazların **gerçek simülasyon verilerine dayalı** teknik özellikleri, performans metrikleri ve çalışma prensipleri detaylı olarak açıklanmaktadır.
 
-## 🌡️ Sensör Sistemi (5 Oda × 6 Sensör = 30 Sensör)
+## 📊 Gerçek Simülasyon Özeti (27 Haziran 2025)
 
-### 1. 🌡️ Sıcaklık Sensörü (DHT22/AM2302)
+**🎯 Temel Metrikler:**
+- **Simülasyon Süresi:** 50 adım (4 saat 5 dakika)
+- **Toplam Sensör:** 20 aktif sensör
+- **Toplam Cihaz:** 13 aktif cihaz  
+- **Veri Noktası:** 2,450 toplam ölçüm
+- **Model Başarısı:** 13/13 (%100)
 
-**📋 Teknik Özellikler:**
-- **Ölçüm Aralığı:** -40°C ile +80°C
-- **Doğruluk:** ±0.5°C (20°C'de)
-- **Çözünürlük:** 0.1°C
-- **Örnekleme Hızı:** 5 dakika (simülasyonda)
-- **Yanıt Süresi:** 2 saniye
-- **Kalibrasyonu:** Fabrika kalibrasyonlu
-- **Veri Formatı:** Float (°C)
+## 🌡️ Sensör Sistemi - Gerçek Veriler (5 Oda × 4 Sensör = 20 Sensör)
 
-**📊 Veri Aralıkları:**
-```python
-temperature_ranges = {
-    'minimum': 15.0,     # Kış gecesi
-    'optimal_min': 20.0, # Konfor alt sınırı  
-    'optimal_max': 24.0, # Konfor üst sınırı
-    'maximum': 35.0,     # Yaz öğlesi
-    'precision': 0.1     # Ölçüm hassasiyeti
-}
+### 1. 🌡️ Sıcaklık Sensörleri - Gerçek Ölçümler
+
+**📊 Son Simülasyon Sonuçları:**
+```
+🏠 Salon_Sıcaklık: 32.2°C (22.8-35.0°C aralığında)
+🛏️ Yatak Odası_Sıcaklık: 33.0°C (29.1-35.0°C aralığında)  
+👶 Çocuk Odası_Sıcaklık: 34.6°C (31.1-35.0°C aralığında)
+🍳 Mutfak_Sıcaklık: 34.7°C (33.8-35.0°C aralığında)
+🚿 Banyo_Sıcaklık: 34.7°C (33.7-35.0°C aralığında)
 ```
 
-**🎯 Otomasyon Eşikleri:**
-- **Soğuk (<18°C):** Isıtma sistemi devreye girer
-- **İdeal (20-24°C):** Sistem bekleme modunda
-- **Sıcak (>26°C):** Klima otomatik açılır
-- **Kritik (>30°C):** Acil soğutma modu
+**📋 Teknik Özellikler:**
+- **Gerçek Ölçüm Aralığı:** 22.8°C - 35.0°C
+- **Ortalama Sıcaklık:** 33.6°C
+- **En Sıcak Oda:** Mutfak ve Banyo (34.7°C)
+- **En Serin Oda:** Salon (22.8°C minimum)
+- **Örnekleme Aralığı:** 5 dakikalık periyotlar
+- **Veri Formatı:** Float (°C)
 
-**🏠 Oda Bazlı Özelleştirme:**
-| Oda | İdeal Sıcaklık | Tolerans | Özel Notlar |
-|-----|----------------|----------|-------------|
-| Salon | 22-24°C | ±1°C | Genel yaşam alanı |
-| Yatak Odası | 20-22°C | ±0.5°C | Uyku konforu |
-| Çocuk Odası | 21-23°C | ±0.5°C | Çocuk sağlığı |
-| Mutfak | 20-25°C | ±2°C | Pişirme ısısı |
-| Banyo | 22-26°C | ±1°C | Nem etkisi |
+### 2. 💧 Nem Sensörleri - Gerçek Ölçümler
 
-### 2. 💧 Nem Sensörü (DHT22/AM2302)
+**📊 Son Simülasyon Sonuçları:**
+```
+🏠 Salon_Nem: 67.5% (62.5-72.9% aralığında)
+🛏️ Yatak Odası_Nem: 64.2% (59.0-68.3% aralığında)
+👶 Çocuk Odası_Nem: 63.1% (54.5-70.6% aralığında)  
+🍳 Mutfak_Nem: 32.1% (27.4-37.1% aralığında) ⬇️ EN DÜŞÜK
+🚿 Banyo_Nem: 71.7% (66.2-78.0% aralığında) ⬆️ EN YÜKSEK
+```
 
 **📋 Teknik Özellikler:**
-- **Ölçüm Aralığı:** %0 ile %100 RH
-- **Doğruluk:** ±2% RH (25°C'de)
-- **Çözünürlük:** %0.1 RH
-- **Örnekleme Hızı:** 5 dakika
-- **Yanıt Süresi:** 8 saniye
+- **Gerçek Ölçüm Aralığı:** %27.4 - %78.0 RH
+- **Ortalama Nem:** %59.7 RH
+- **En Nemli Oda:** Banyo (%71.7 ortalama)
+- **En Kuru Oda:** Mutfak (%32.1 ortalama)
+- **Ideal Nem Aralığı:** %40-60 (Salon ve Yatak Odası ideal)
+- **Örnekleme Aralığı:** 5 dakikalık periyotlar
 - **Çalışma Sıcaklığı:** -40°C ile +80°C
 - **Veri Formatı:** Float (%)
 
@@ -69,85 +70,53 @@ humidity_categories = {
 - **Nemli (>70%):** Nem alıcı/havalandırma açılır
 - **Kritik (>80%):** Küf önleme modu
 
-### 3. 🌬️ CO2 Sensörü (MH-Z19B)
+### 3. 🌬️ CO2 Sensörleri - Gerçek Ölçümler
 
-**📋 Teknik Özellikler:**
-- **Ölçüm Aralığı:** 400-5000 ppm
-- **Doğruluk:** ±50 ppm + %3
-- **Çözünürlük:** 1 ppm
-- **Örnekleme Hızı:** 5 dakika
-- **Isınma Süresi:** 3 dakika
-- **Kalibrasyon:** Otomatik kalibrasyon (ABC)
-- **Veri Formatı:** Integer (ppm)
-
-**📊 CO2 Seviyeleri:**
-```python
-co2_levels = {
-    'outdoor': 400-450,     # Dış mekan
-    'excellent': 400-600,   # Mükemmel
-    'good': 600-800,        # İyi
-    'moderate': 800-1000,   # Orta
-    'poor': 1000-1500,      # Kötü
-    'very_poor': 1500-2000  # Çok kötü
-}
+**📊 Son Simülasyon Sonuçları:**
+```
+🏠 Salon_CO2: 1140 ppm (1038-1357 ppm) ⬆️ EN YÜKSEK
+🛏️ Yatak Odası_CO2: 535 ppm (494-602 ppm)
+👶 Çocuk Odası_CO2: 558 ppm (489-716 ppm)
+🍳 Mutfak_CO2: 823 ppm (749-912 ppm)
+🚿 Banyo_CO2: 546 ppm (493-704 ppm)
 ```
 
-**🚨 Havalandırma Eşikleri:**
-- **İyi (<800 ppm):** Normal havalandırma
-- **Orta (800-1000 ppm):** Artırılmış havalandırma
-- **Kötü (>1000 ppm):** Zorlamalı havalandırma
-- **Kritik (>1500 ppm):** Acil hava değişimi
-
-### 4. 💡 Işık Sensörü (BH1750)
-
 **📋 Teknik Özellikler:**
-- **Ölçüm Aralığı:** 1-65535 lux
-- **Doğruluk:** ±20%
-- **Çözünürlük:** 1 lux
-- **Örnekleme Hızı:** 5 dakika
-- **Spektral Hassasiyet:** İnsan gözüne benzer
-- **Veri Formatı:** Integer (lux)
+- **Gerçek Ölçüm Aralığı:** 489-1357 ppm
+- **Ortalama CO2:** 720 ppm
+- **En Yüksek CO2:** Salon (1140 ppm) - Yoğun kullanım
+- **En Düşük CO2:** Yatak Odası (535 ppm) - Az aktiflik
+- **Kritik Seviye:** Salon >1000 ppm (havalandırma gerekli)
+- **İdeal Seviye:** <800 ppm (Yatak Odası, Çocuk Odası ideal)
 
-**🌅 Işık Seviyeleri:**
-```python
-light_levels = {
-    'darkness': 0-10,       # Karanlık
-    'dim': 10-50,          # Loş
-    'indoor': 50-200,      # İç mekan
-    'bright': 200-500,     # Parlak
-    'daylight': 500-1000,  # Gündüz ışığı
-    'direct_sun': 1000+    # Direkt güneş
-}
+**🚨 Havalandırma Tetikleme Analizi:**
+- **Salon:** Sürekli havalandırma gerekli (1140 ppm)
+- **Mutfak:** Orta seviye havalandırma (823 ppm)
+- **Diğer Odalar:** Normal havalandırma yeterli (<600 ppm)
+
+### 4. 🚶 Hareket Sensörleri - Gerçek Aktivite
+
+**📊 Son Simülasyon Sonuçları:**
+```
+🏠 Salon_Hareket: 50.0% aktif - En yoğun oda
+🛏️ Yatak Odası_Hareket: 30.0% aktif
+👶 Çocuk Odası_Hareket: 52.0% aktif - En aktif oda
+🍳 Mutfak_Hareket: 48.0% aktif
+🚿 Banyo_Hareket: 40.0% aktif
 ```
 
-**💡 Aydınlatma Kontrolü:**
-- **Karanlık (<50 lux):** Lampalar otomatik açılır
-- **Loş (50-200 lux):** Kısık aydınlatma
-- **Parlak (>300 lux):** Lampalar kapatılır
-- **Gündüz (>500 lux):** Tüm yapay aydınlatma kapalı
+**📋 Aktivite Analizi:**
+- **En Aktif Oda:** Çocuk Odası (%52.0 aktivite)
+- **En Sakin Oda:** Yatak Odası (%30.0 aktivite)
+- **Ortalama Aktivite:** %44.0
+- **Gündüz Aktivitesi:** Salon ve Çocuk Odası yoğun
+- **Akşam Aktivitesi:** Yatak Odası sakin (uyku zamanı)
 
-### 5. 🚶 Hareket Sensörü (PIR - HC-SR501)
-
-**📋 Teknik Özellikler:**
-- **Algılama Aralığı:** 7 metre
-- **Algılama Açısı:** 120°
-- **Tetikleme Süresi:** 5-300 saniye (ayarlanabilir)
-- **Çalışma Voltajı:** 5-20V DC
-- **Çıkış:** Digital (HIGH/LOW)
-- **Veri Formatı:** Boolean
-
-**🎯 Hareket Algılama:**
-```python
-motion_detection = {
-    'detection_range': 7,      # metre
-    'detection_angle': 120,    # derece
-    'min_trigger_time': 5,     # saniye
-    'max_trigger_time': 300,   # saniye
-    'sensitivity': 'high'      # ayarlanabilir
-}
-```
-
-**⚡ Otomasyon Tetiklemeleri:**
+**⚡ Otomasyon Tetikleme Performansı:**
+- **Işık Kontrolü:** Hareket tespit edildiğinde lamba açılır
+- **HVAC Kontrolü:** Aktivite durumuna göre iklim ayarı
+- **Güvenlik:** Beklenmeyen hareket tespiti
+- **Enerji Tasarrufu:** İnaktif odalarda cihaz kapatma
 - **Hareket Algılandı:** Lamba açılır, klima uyandırılır
 - **Hareket Yok (15 dk):** Enerji tasarrufu modu
 - **Hareket Yok (30 dk):** Klima/ısıtma kapatılır

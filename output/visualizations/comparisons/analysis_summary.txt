@@ -1,0 +1,21 @@
+
+# Gerçek Veri Bazlı Karşılaştırmalı Analiz Özeti
+
+## Enerji Tasarrufu
+- Günlük Toplam Tasarruf: 12.5 kWh (%27.9)
+- Aylık Finansal Tasarruf: 940 TL
+- En Verimli Cihaz: Klima
+
+## Konfor İyileştirmesi  
+- Ortalama Konfor Skoru: 58.5/100 (vs Geleneksel: 35.4/100)
+- İyileştirme: +23.1 puan
+
+## Finansal Analiz
+- Sistem Maliyeti: 3,900 TL
+- Geri Ödeme Süresi: 4.1 ay
+- 5 Yıllık ROI: %1346.6
+
+## Sistem Bilgileri
+- Analiz Edilen Cihaz Sayısı: 13
+- Simülasyon Adım Sayısı: 864
+- Veri Kaynağı: C:\Users\ndr20\Desktop\b.tasarım\smart-home-automation\data\raw\generated_data_20250624_1453.csv
