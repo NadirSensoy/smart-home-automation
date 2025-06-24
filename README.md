@@ -232,16 +232,10 @@ smart-home-automation/
 
 ## 📞 İletişim ve Destek
 
-- 📧 **E-posta**: [geliştirici@smarthome.com](mailto:geliştirici@smarthome.com)
-- 🐛 **Hata Bildirimi**: [GitHub Issues](https://github.com/yourusername/smart-home-automation/issues)
-- 💬 **Tartışma**: [GitHub Discussions](https://github.com/yourusername/smart-home-automation/discussions)
-- 📚 **Wiki**: [Proje Wiki](https://github.com/yourusername/smart-home-automation/wiki)
+- 🐛 **Hata Bildirimi**: [GitHub Issues](https://github.com/NadirSensoy/smart-home-automation/issues)
+- 💬 **Tartışma**: [GitHub Discussions](https://github.com/NadirSensoy/smart-home-automation/discussions)
+- 📚 **Wiki**: [Proje Wiki](https://github.com/NadirSensoy/smart-home-automation/wiki)
 
-## 📄 Lisans
-
-Bu proje **MIT Lisansı** altında lisanslanmıştır. Detaylar için [LICENSE](LICENSE) dosyasına bakınız.
-
----
 
 **🏠 Geleceğin akıllı evini bugün deneyimleyin!** ✨
 
